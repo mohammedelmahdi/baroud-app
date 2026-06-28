@@ -1,0 +1,6 @@
+{
+  "name": "GAC - إدارة عروض الفانتازيا والبارود",
+  "description": "نظام إدارة وحجز عروض الفانتازيا والبارود التقليدية في الجزائر، يربط بين الجمعيات، الخيالة والزبائن لتنظيم وتتبع العروض باحترافية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

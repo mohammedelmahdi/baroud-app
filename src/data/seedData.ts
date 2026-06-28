@@ -1,0 +1,155 @@
+import { Rider, Booking } from '../types';
+
+export const initialRiders: Rider[] = [
+  {
+    id: 'rider_1',
+    name: 'أحمد بن سالم',
+    type: 'بارود',
+    username: 'ahmed_baroud',
+    password: 'password123',
+    status: 'متاح',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDls5vy6r18nSSyI2x46XN_X8quJXIvKTIS0A5WvKkVUWFEDQfhJunITLuTrc6P8n4JKdXLLafyJmd8lc1iIpQpee_FpG-lCE0bzMuqbkW2-5uBMwcxuqizqCp9n1Xo4oEGGpEVxejfuU6ccbGWiBjApCjUHbQqoSVB9B_ztPPiOs5bo329oBfuf9oS9eRSdoq1Qcl-LdOnrk9SFJWtdG0cjjD9L0KiN7tRKvUgbCwKbhgaGy4rMT-vKJwRr6Y5dqIW2MEk1Alp1oI'
+  },
+  {
+    id: 'rider_2',
+    name: 'ياسين الجزائري',
+    type: 'خيال',
+    username: 'yassine_dz',
+    password: 'password123',
+    status: 'في مهمة',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5JJgMNwFk4-7MGu4MzA4tBJ2sVpOo5bVrPqaDMB6poTF79dmkx8uSmPL4v4B-RYkSoMbUwx-CEZJ8oAq0TVhNrwsnZLBbDRDibe4sA2x0JktdaIMgOrKpkSKFojEgpM2QoEOy3B6hsXpOOCiiUO2c1pVzTmv_mCUWQnM_C260bqHuSmN9z-Ma2nfi9zFym0Qbh93DZZtcBZ77DGPwWoR5OBLgDc9T0wkktsQxD6U8lrKO2PKhK1P7rS_A-JqAcF_T4rTmhEmDefw'
+  },
+  {
+    id: 'rider_3',
+    name: 'مصطفى الحاج',
+    type: 'خيال',
+    username: 'mostafa_haj',
+    password: 'password123',
+    status: 'متاح',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBtujOs2BsgKj8c3Jssd6M-e7VCoalRs0KprcTVZxMqkVKk4Zjnr03skvEUKgW550Nyh6PMo3BTYokEzvXGtgVODhPoM7FTD_8BF80Y3Yvyu8iXz6CMNpiBkOvOrHUsKrFeuP8ZhQvHwZa4GrdHUie4gbbkk5IV27n_sbo9qwWUw6z1KlDJJtA_sJpxgeaQHdC24SWSweuRHC1-QBSkw7QsLQFIJlQZGnX-XDBh1XQQWJSMb1X_vpp1keiMJvQyfhNNyu1I4qnjWPs'
+  },
+  {
+    id: 'rider_4',
+    name: 'سيف الدين. ب',
+    type: 'خيال',
+    username: 'seif_b',
+    password: 'password123',
+    status: 'متاح',
+    image: 'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&w=300&q=80'
+  },
+  {
+    id: 'rider_5',
+    name: 'عمر الفاروق',
+    type: 'بارود',
+    username: 'omar_farouk',
+    password: 'password123',
+    status: 'متاح',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80'
+  },
+  {
+    id: 'rider_6',
+    name: 'عبد القادر الجزائري',
+    type: 'خيال',
+    username: 'abdelkader_dz',
+    password: 'password123',
+    status: 'في مهمة',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80'
+  }
+];
+
+export const initialBookings: Booking[] = [
+  {
+    id: 'booking_1',
+    customerName: 'أحمد بن محمد',
+    phone: '0550123456',
+    date: '2024-07-12',
+    wilaya: 'تيبازة',
+    ridersCount: 15,
+    startPoint: 'وسط المدينة، تيبازة',
+    endPoint: 'ساحة العروض الكبرى، تيبازة',
+    status: 'قيد الانتظار',
+    assignedRiders: [],
+    createdAt: '2024-06-25T10:00:00Z'
+  },
+  {
+    id: 'booking_2',
+    customerName: 'جمعية الفروسية الأصيلة',
+    phone: '021456789',
+    date: '2024-07-15',
+    wilaya: 'مستغانم',
+    ridersCount: 25,
+    startPoint: 'حي المطمر، مستغانم',
+    endPoint: 'الميدان الأثري للفنتازيا، مستغانم',
+    status: 'مؤكد',
+    assignedRiders: ['rider_1', 'rider_3'],
+    createdAt: '2024-06-24T08:30:00Z'
+  },
+  {
+    id: 'booking_3',
+    customerName: 'ياسين شريف',
+    phone: '0661789012',
+    date: '2024-07-05',
+    wilaya: 'تلمسان',
+    ridersCount: 10,
+    startPoint: 'قلعة المشور، تلمسان',
+    endPoint: 'هضبة لالة ستي، تلمسان',
+    status: 'مكتمل',
+    assignedRiders: ['rider_2', 'rider_6'],
+    createdAt: '2024-06-20T14:15:00Z'
+  },
+  {
+    id: 'booking_4',
+    customerName: 'السيد ياسين بوزيدي',
+    phone: '0555123456',
+    date: '2024-06-15',
+    wilaya: 'الجزائر العاصمة',
+    ridersCount: 8,
+    startPoint: 'بئر مراد رايس',
+    endPoint: 'دالي ابراهيم',
+    status: 'مؤكد',
+    assignedRiders: ['rider_1', 'rider_4'],
+    createdAt: '2024-06-10T09:00:00Z'
+  },
+  {
+    id: 'booking_5',
+    customerName: 'العائلة مرواني',
+    phone: '0666789012',
+    date: '2024-06-16',
+    wilaya: 'الجزائر العاصمة',
+    ridersCount: 12,
+    startPoint: 'سيدي فرج',
+    endPoint: 'زرالدة',
+    status: 'مؤكد',
+    assignedRiders: ['rider_2', 'rider_3'],
+    createdAt: '2024-06-11T16:45:00Z'
+  },
+  {
+    id: 'booking_6',
+    customerName: 'السيد كمال طيباوي',
+    phone: '0777456789',
+    date: '2024-06-21',
+    wilaya: 'البليدة',
+    ridersCount: 20,
+    startPoint: 'وسط البليدة',
+    endPoint: 'بوفاريك',
+    status: 'قيد الانتظار',
+    assignedRiders: [],
+    createdAt: '2024-06-12T11:20:00Z'
+  }
+];
+
+export const ALGERIAN_WILAYAS = [
+  'الجزائر العاصمة',
+  'وهران',
+  'قسنطينة',
+  'تلمسان',
+  'تيبازة',
+  'مستغانم',
+  'البليدة',
+  'سطيف',
+  'باتنة',
+  'بجاية',
+  'جلفة',
+  'بسكرة',
+  'عنابة'
+];
