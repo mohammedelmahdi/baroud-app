@@ -164,6 +164,8 @@ export default function AdminBookingsView({
               <div
                 key={booking.id}
                 className={`glass-card-interactive p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-white/10 hover:scale-[1.005] transition-all duration-200 relative ${
+                  activeMenuId === booking.id ? 'z-30' : 'z-10'
+                } ${
                   isPending ? 'heritage-border-gold' : 'heritage-border'
                 } ${isCompleted ? 'opacity-70' : ''}`}
               >
