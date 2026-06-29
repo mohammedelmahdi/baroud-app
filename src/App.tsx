@@ -7,6 +7,7 @@ import AdminBookingsView from './components/AdminBookingsView';
 import AdminRidersView from './components/AdminRidersView';
 import AdminCalendarView from './components/AdminCalendarView';
 import AdminStatsView from './components/AdminStatsView';
+import AdminProfileView from './components/AdminProfileView';
 import RiderDashboardView from './components/RiderDashboardView';
 import Sidebar from './components/Sidebar';
 import BottomNavBar from './components/BottomNavBar';
@@ -22,6 +23,24 @@ export default function App() {
   const [bookings, setBookings] = useState<Booking[]>(() => {
     const saved = localStorage.getItem('gac_bookings');
     return saved ? JSON.parse(saved) : initialBookings;
+  });
+
+  // Owner settings persistent states
+  const [ownerName, setOwnerName] = useState<string>(() => {
+    return localStorage.getItem('gac_owner_name') || 'مدير الجمعية';
+  });
+
+  const [appName, setAppName] = useState<string>(() => {
+    return localStorage.getItem('gac_app_name') || 'GAC';
+  });
+
+  const [ownerPicture, setOwnerPicture] = useState<string>(() => {
+    return localStorage.getItem('gac_owner_picture') || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQr_DnDfoEvvlXDUFBo-0YHL31Z6qrYy0LcR9z1oThmVqrgOJzb-hfZ23dGNxpFfqlv8AEn4bygqeBVGu8e6fg5clr9A1oojBMWUB9efVDasB9D30GiT_NdICG54dZdoufsH6OoGWXiNVt458HFxsyYxFr-i-8hvsT7saTwjyRQWBPYxNN3l-yVXtAja4p3fmYIPPW4ZIDksWW9FwUffHzZjia-eZWaGyIdqE84MR06s8EOm6ekfJN1Eyl9FoT9-d2CFoYrZRn3hM';
+  });
+
+  const [appTheme, setAppTheme] = useState<'cosmic' | 'royal'>(() => {
+    const saved = localStorage.getItem('gac_theme');
+    return saved === 'royal' ? 'royal' : 'cosmic';
   });
 
   // 2. Navigation & Portal States
@@ -66,6 +85,47 @@ export default function App() {
     }
   }, [session]);
 
+  // 5. Owner Settings Persistence & Theme Injector
+  useEffect(() => {
+    localStorage.setItem('gac_owner_name', ownerName);
+  }, [ownerName]);
+
+  useEffect(() => {
+    localStorage.setItem('gac_app_name', appName);
+  }, [appName]);
+
+  useEffect(() => {
+    localStorage.setItem('gac_owner_picture', ownerPicture);
+  }, [ownerPicture]);
+
+  useEffect(() => {
+    localStorage.setItem('gac_theme', appTheme);
+  }, [appTheme]);
+
+  // Theme styling effect to update CSS variables and class lists dynamically
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('theme-dark', 'theme-light', 'theme-warm');
+
+    if (appTheme === 'cosmic') {
+      root.classList.add('theme-dark');
+      root.style.setProperty('--theme-primary', '#6366f1');
+      root.style.setProperty('--theme-secondary', '#a855f7');
+      root.style.setProperty('--theme-bg', '#020617');
+      root.style.setProperty('--theme-glow-1', 'rgba(99, 102, 241, 0.15)');
+      root.style.setProperty('--theme-glow-2', 'rgba(168, 85, 247, 0.12)');
+      root.style.setProperty('--theme-glow-3', 'rgba(14, 165, 233, 0.12)');
+    } else if (appTheme === 'royal') {
+      root.classList.add('theme-warm');
+      root.style.setProperty('--theme-primary', '#ea580c');
+      root.style.setProperty('--theme-secondary', '#b45309');
+      root.style.setProperty('--theme-bg', '#faf7f2');
+      root.style.setProperty('--theme-glow-1', 'rgba(234, 88, 12, 0.08)');
+      root.style.setProperty('--theme-glow-2', 'rgba(180, 83, 9, 0.06)');
+      root.style.setProperty('--theme-glow-3', 'rgba(217, 119, 6, 0.06)');
+    }
+  }, [appTheme]);
+
   // 5. Database / State Operations
   const handleAddBooking = (bookingData: Omit<Booking, 'id' | 'status' | 'assignedRiders' | 'createdAt'>) => {
     const newBooking: Booking = {
@@ -81,6 +141,12 @@ export default function App() {
   const handleUpdateBookingStatus = (id: string, status: BookingStatus) => {
     setBookings((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status } : b))
+    );
+  };
+
+  const handleUpdateBooking = (id: string, updatedData: Partial<Booking>) => {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, ...updatedData } : b))
     );
   };
 
@@ -187,32 +253,36 @@ export default function App() {
 
   // Render Main Admin Panel (session.role === 'admin')
   return (
-    <div className="min-h-screen text-right font-sans lg:mr-80 pb-32 bg-slate-950 text-slate-100 relative overflow-hidden animate-fade-in" dir="rtl">
+    <div className="min-h-screen text-right font-sans lg:mr-80 pb-32 bg-[var(--theme-bg)] text-[var(--text-main)] relative overflow-hidden animate-fade-in transition-colors duration-300" dir="rtl">
       {/* Decorative background glows */}
       <div className="absolute top-20 right-10 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-20 left-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Admin Panel Top Header Bar */}
       <header className="flex flex-row justify-between items-center w-full px-5 lg:px-10 h-16 z-30 bg-slate-900/40 backdrop-blur-md border-b border-white/10 sticky top-0 relative">
-        <div className="flex items-center gap-3">
+        <button
+          onClick={() => setActiveTab('profile')}
+          className="flex items-center gap-3 hover:bg-white/5 p-1 px-2.5 rounded-xl transition-all cursor-pointer group text-right"
+          title="عرض وتعديل الملف الشخصي"
+        >
           <div className="text-right">
-            <p className="text-xs font-bold text-white">مدير الجمعية</p>
+            <p className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">{ownerName}</p>
             <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-              <span>متصل عبر لوحة التحكم</span>
+              <span>لوحة التحكم</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-full border-2 border-white/20 bg-slate-800 overflow-hidden shrink-0">
+          <div className="w-10 h-10 rounded-full border-2 border-white/20 group-hover:border-indigo-400 transition-all bg-slate-800 overflow-hidden shrink-0">
             <img
               className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQr_DnDfoEvvlXDUFBo-0YHL31Z6qrYy0LcR9z1oThmVqrgOJzb-hfZ23dGNxpFfqlv8AEn4bygqeBVGu8e6fg5clr9A1oojBMWUB9efVDasB9D30GiT_NdICG54dZdoufsH6OoGWXiNVt458HFxsyYxFr-i-8hvsT7saTwjyRQWBPYxNN3l-yVXtAja4p3fmYIPPW4ZIDksWW9FwUffHzZjia-eZWaGyIdqE84MR06s8EOm6ekfJN1Eyl9FoT9-d2CFoYrZRn3hM"
+              src={ownerPicture}
               alt="Manager Avatar"
               referrerPolicy="no-referrer"
             />
           </div>
-        </div>
+        </button>
 
-        <h1 className="text-2xl font-bold text-white font-headline tracking-wider">GAC</h1>
+        <h1 className="text-2xl font-bold text-white font-headline tracking-wider">{appName}</h1>
 
         <button
           onClick={handleLogout}
@@ -228,10 +298,13 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
         onLogout={handleLogout}
+        ownerName={ownerName}
+        appName={appName}
+        ownerPicture={ownerPicture}
       />
 
       {/* Main Admin Contents Layout */}
-      <main className="px-5 lg:px-10 py-8 max-w-7xl mx-auto relative z-10">
+      <main className="px-5 lg:px-10 py-8 max-w-7xl mx-auto relative">
         
         {/* Active tab routing */}
         {activeTab === 'bookings' && (
@@ -254,6 +327,7 @@ export default function App() {
               bookings={bookings}
               riders={riders}
               onUpdateBookingStatus={handleUpdateBookingStatus}
+              onUpdateBooking={handleUpdateBooking}
               onAssignRiders={handleAssignRiders}
               onDeleteBooking={handleDeleteBooking}
             />
@@ -263,6 +337,7 @@ export default function App() {
         {activeTab === 'riders' && (
           <AdminRidersView
             riders={riders}
+            bookings={bookings}
             onAddRider={handleAddRider}
             onUpdateRider={handleUpdateRider}
             onDeleteRider={handleDeleteRider}
@@ -275,6 +350,19 @@ export default function App() {
 
         {activeTab === 'stats' && (
           <AdminStatsView bookings={bookings} riders={riders} />
+        )}
+
+        {activeTab === 'profile' && (
+          <AdminProfileView
+            ownerName={ownerName}
+            onUpdateOwnerName={setOwnerName}
+            appName={appName}
+            onUpdateAppName={setAppName}
+            ownerPicture={ownerPicture}
+            onUpdateOwnerPicture={setOwnerPicture}
+            appTheme={appTheme}
+            onUpdateAppTheme={setAppTheme}
+          />
         )}
 
       </main>

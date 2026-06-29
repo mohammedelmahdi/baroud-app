@@ -6,14 +6,309 @@
   --font-serif: "Literata", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
+:root {
+  --theme-primary: #6366f1;
+  --theme-secondary: #a855f7;
+  --theme-bg: #020617;
+  --theme-glow-1: rgba(99, 102, 241, 0.15);
+  --theme-glow-2: rgba(168, 85, 247, 0.12);
+  --theme-glow-3: rgba(14, 165, 233, 0.12);
+  
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-bright: #ffffff;
+}
+
 body {
   font-family: var(--font-sans);
-  background-color: #020617;
-  color: #f8fafc;
+  background-color: var(--theme-bg);
+  color: var(--text-main);
   min-height: 100vh;
   margin: 0;
   position: relative;
   overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Warm Cream Theme Variables & Overrides */
+.theme-warm {
+  --theme-primary: #ea580c;
+  --theme-secondary: #b45309;
+  --theme-bg: #faf7f2;
+  --theme-glow-1: rgba(234, 88, 12, 0.08);
+  --theme-glow-2: rgba(180, 83, 9, 0.06);
+  --theme-glow-3: rgba(217, 119, 6, 0.06);
+  
+  --card-bg: #ffffff;
+  --card-border: rgba(120, 53, 4, 0.14);
+  --text-main: #2d241e;
+  --text-muted: #6e6154;
+  --text-bright: #1c110a;
+}
+
+/* Dynamic theme adjustments for Warm Cream mode */
+.theme-warm {
+  /* Override general white text colors in light/warm themes */
+  .text-white, 
+  .text-slate-50,
+  .text-slate-100, 
+  .text-slate-200, 
+  .text-slate-300, 
+  .text-indigo-100, 
+  .text-indigo-200,
+  .text-gray-100,
+  .text-gray-200,
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-bright) !important;
+  }
+  
+  .text-slate-400, 
+  .text-slate-500, 
+  .text-gray-400, 
+  .text-gray-500,
+  .text-indigo-300 {
+    color: var(--text-muted) !important;
+  }
+
+  /* Make active text-indigo-400 map to theme primary color */
+  .text-indigo-400 {
+    color: var(--theme-primary) !important;
+  }
+
+  .text-purple-300,
+  .text-indigo-300,
+  .text-indigo-400 {
+    color: var(--theme-primary) !important;
+  }
+
+  .text-emerald-300,
+  .text-emerald-400 {
+    color: #15803d !important;
+  }
+
+  .text-amber-300,
+  .text-amber-400,
+  .text-yellow-400 {
+    color: #9a3412 !important;
+  }
+
+  .border-white\/5,
+  .border-white\/10,
+  .border-white\/15,
+  .border-white\/20,
+  .border-slate-800,
+  .border-gray-800 {
+    border-color: var(--card-border) !important;
+  }
+
+  /* Override dark backgrounds with light backgrounds */
+  aside,
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-800,
+  .glass-panel,
+  .glass-card,
+  .glass-card-interactive {
+    background-color: var(--card-bg) !important;
+    background: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+    box-shadow: 0 10px 25px -4px rgba(120, 53, 4, 0.08), 0 4px 12px -2px rgba(120, 53, 4, 0.04) !important;
+  }
+
+  /* Inner sub-containers and highlight boxes inside cards */
+  .bg-white\/5,
+  .bg-white\/10,
+  .bg-white\/[0.01],
+  .bg-white\/[0.02],
+  .bg-white\/[0.04],
+  .bg-slate-900\/40,
+  .bg-slate-900\/50,
+  .bg-slate-950\/40,
+  .bg-slate-950\/50,
+  .bg-indigo-950\/50 {
+    background-color: rgba(120, 53, 4, 0.04) !important;
+    background: rgba(120, 53, 4, 0.04) !important;
+    border-color: rgba(120, 53, 4, 0.1) !important;
+    box-shadow: none !important;
+  }
+
+  /* Keep sidebar navigation links legible */
+  nav button {
+    color: var(--text-muted) !important;
+  }
+  nav button:hover, nav button.bg-white\/10 {
+    color: var(--theme-primary) !important;
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* Explicitly style the bottom navigation bar */
+  nav.fixed.bottom-0 {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-top: 1px solid var(--card-border) !important;
+    box-shadow: 0 -10px 35px rgba(120, 53, 4, 0.09) !important;
+  }
+
+  nav.fixed.bottom-0 button {
+    color: var(--text-muted) !important;
+  }
+
+  nav.fixed.bottom-0 button span {
+    color: var(--text-muted) !important;
+    font-weight: 600 !important;
+  }
+
+  nav.fixed.bottom-0 button.text-indigo-400,
+  nav.fixed.bottom-0 button .text-indigo-400,
+  nav.fixed.bottom-0 button.text-indigo-400 span,
+  nav.fixed.bottom-0 button.scale-105,
+  nav.fixed.bottom-0 button.scale-105 span {
+    color: var(--theme-primary) !important;
+    font-weight: 800 !important;
+  }
+
+  /* Input fields */
+  input, select, textarea {
+    background-color: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: var(--text-bright) !important;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--theme-primary) !important;
+    background-color: #ffffff !important;
+  }
+  
+  input::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+  }
+
+  /* Secondary buttons style */
+  .btn-secondary {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-main) !important;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Header and sticky bars */
+  header, .sticky {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    border-color: var(--card-border) !important;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  /* Popups and Modals styling for Light and Warm Cream Themes */
+  .fixed.inset-0 {
+    background-color: rgba(15, 23, 42, 0.45) !important; /* Soft backdrop overlay */
+    backdrop-filter: blur(8px) !important;
+  }
+
+  /* Target any card, container, form, or dialog inside a fixed overlay */
+  .fixed.inset-0 > div,
+  .fixed.inset-0 > form,
+  .fixed.inset-0 .glass-panel,
+  .fixed.inset-0 [class*="bg-slate-900"],
+  .fixed.inset-0 [class*="bg-slate-950"],
+  .fixed.inset-0 [class*="bg-indigo-950"] {
+    background-color: var(--card-bg) !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    color: var(--text-main) !important;
+  }
+
+  /* Text colors inside popups in light/warm modes */
+  .fixed.inset-0 h1,
+  .fixed.inset-0 h2,
+  .fixed.inset-0 h3,
+  .fixed.inset-0 h4,
+  .fixed.inset-0 h5,
+  .fixed.inset-0 h6,
+  .fixed.inset-0 .text-white {
+    color: var(--text-bright) !important;
+  }
+
+  .fixed.inset-0 p,
+  .fixed.inset-0 span,
+  .fixed.inset-0 label,
+  .fixed.inset-0 .text-slate-300,
+  .fixed.inset-0 .text-slate-400 {
+    color: var(--text-muted) !important;
+  }
+
+  .fixed.inset-0 strong,
+  .fixed.inset-0 .text-indigo-400,
+  .fixed.inset-0 .text-emerald-400,
+  .fixed.inset-0 .text-amber-400 {
+    font-weight: 700;
+  }
+
+  /* Borders inside popups */
+  .fixed.inset-0 .border-white\/10,
+  .fixed.inset-0 .border-white\/15,
+  .fixed.inset-0 .border-white\/5,
+  .fixed.inset-0 .border-b,
+  .fixed.inset-0 .border-t,
+  .fixed.inset-0 .border {
+    border-color: var(--card-border) !important;
+  }
+
+  /* Selection check marks, tags and small info boxes inside modals */
+  .fixed.inset-0 .bg-white\/5,
+  .fixed.inset-0 .bg-slate-850,
+  .fixed.inset-0 .bg-slate-900\/50,
+  .fixed.inset-0 .bg-indigo-950\/30 {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Buttons & inputs inside popups */
+  .fixed.inset-0 input,
+  .fixed.inset-0 select,
+  .fixed.inset-0 textarea {
+    background-color: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: var(--text-bright) !important;
+  }
+
+  /* Support for secondary close button styling in popups */
+  .fixed.inset-0 button:not(.btn-gradient):not(.bg-indigo-600):not(.bg-emerald-600):not(.bg-red-600):not(.bg-amber-600) {
+    color: var(--text-muted) !important;
+  }
+  
+  .fixed.inset-0 button:not(.btn-gradient):not(.bg-indigo-600):not(.bg-emerald-600):not(.bg-red-600):not(.bg-amber-600):hover {
+    color: var(--text-bright) !important;
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* Keep positive action and submit buttons styled nicely */
+  .fixed.inset-0 button.bg-indigo-600,
+  .fixed.inset-0 button.bg-emerald-600,
+  .fixed.inset-0 button.bg-red-600,
+  .fixed.inset-0 button.btn-gradient,
+  .fixed.inset-0 [type="submit"] {
+    color: #ffffff !important;
+  }
 }
 
 /* Background Cosmic Blur Blobs */
@@ -28,25 +323,28 @@ body {
 .blob-1 {
   width: 500px;
   height: 500px;
-  background: rgba(99, 102, 241, 0.15); /* Indigo glow */
+  background: var(--theme-glow-1); /* Indigo glow */
   top: -150px;
   left: -150px;
+  transition: background 0.4s ease;
 }
 
 .blob-2 {
   width: 550px;
   height: 550px;
-  background: rgba(168, 85, 247, 0.12); /* Purple/Magenta glow */
+  background: var(--theme-glow-2); /* Purple/Magenta glow */
   bottom: -150px;
   right: -150px;
+  transition: background 0.4s ease;
 }
 
 .blob-3 {
   width: 400px;
   height: 400px;
-  background: rgba(14, 165, 233, 0.12); /* Sky blue glow */
+  background: var(--theme-glow-3); /* Sky blue glow */
   top: 30% ;
   left: 30% ;
+  transition: background 0.4s ease;
 }
 
 /* Frosted Glass Core Classes */
@@ -101,7 +399,7 @@ body {
 
 /* Beautiful dynamic gradients and accents */
 .btn-gradient {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
   color: #ffffff;
   font-weight: 600;
   box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);

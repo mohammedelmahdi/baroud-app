@@ -1,19 +1,30 @@
 import React from 'react';
 import { NavigationTab } from '../types';
-import { CalendarRange, Users, Calendar, LineChart, LogOut, MapPin } from 'lucide-react';
+import { CalendarRange, Users, Calendar, LineChart, LogOut, MapPin, User } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: NavigationTab;
   onTabChange: (tab: NavigationTab) => void;
   onLogout: () => void;
+  ownerName: string;
+  appName: string;
+  ownerPicture: string;
 }
 
-export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
+export default function Sidebar({
+  activeTab,
+  onTabChange,
+  onLogout,
+  ownerName,
+  appName,
+  ownerPicture
+}: SidebarProps) {
   const navItems = [
     { id: 'bookings', label: 'الحجوزات', icon: CalendarRange },
     { id: 'riders', label: 'المشاركون', icon: Users },
     { id: 'calendar', label: 'التقويم', icon: Calendar },
     { id: 'stats', label: 'الإحصائيات', icon: LineChart },
+    { id: 'profile', label: 'الملف الشخصي', icon: User }
   ] as const;
 
   return (
@@ -21,20 +32,24 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
       <div className="p-6 flex flex-col items-end gap-6 h-full">
         
         {/* Admin profile header detail */}
-        <div className="w-full flex flex-row items-center gap-4 border-b border-white/5 pb-6">
-          <div className="w-14 h-14 rounded-full bg-indigo-950/50 overflow-hidden shrink-0 border-2 border-white/10">
+        <button
+          onClick={() => onTabChange('profile')}
+          className="w-full flex flex-row items-center gap-4 border-b border-white/5 pb-6 text-right hover:bg-white/[0.03] p-2 rounded-xl transition-all group cursor-pointer"
+          title="عرض الملف الشخصي والإعدادات"
+        >
+          <div className="w-14 h-14 rounded-full bg-indigo-950/50 overflow-hidden shrink-0 border-2 border-white/10 group-hover:border-indigo-400 transition-all">
             <img
               className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQr_DnDfoEvvlXDUFBo-0YHL31Z6qrYy0LcR9z1oThmVqrgOJzb-hfZ23dGNxpFfqlv8AEn4bygqeBVGu8e6fg5clr9A1oojBMWUB9efVDasB9D30GiT_NdICG54dZdoufsH6OoGWXiNVt458HFxsyYxFr-i-8hvsT7saTwjyRQWBPYxNN3l-yVXtAja4p3fmYIPPW4ZIDksWW9FwUffHzZjia-eZWaGyIdqE84MR06s8EOm6ekfJN1Eyl9FoT9-d2CFoYrZRn3hM"
+              src={ownerPicture}
               alt="Association Manager Profile"
               referrerPolicy="no-referrer"
             />
           </div>
           <div className="text-right">
-            <h2 className="text-sm font-bold text-slate-100 font-headline">مدير الجمعية</h2>
-            <p className="text-[10px] text-indigo-200/60 font-medium mt-1">جمعية البارود والخيالة الأصيلة</p>
+            <h2 className="text-sm font-bold text-slate-100 font-headline group-hover:text-indigo-300 transition-colors">{ownerName}</h2>
+            <p className="text-[10px] text-indigo-200/60 font-medium mt-1 truncate max-w-[150px]">{appName}</p>
           </div>
-        </div>
+        </button>
 
         {/* Vertical Menu Nav List */}
         <nav className="w-full space-y-2 flex-1">

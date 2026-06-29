@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Booking, Rider, BookingStatus } from '../types';
+import { ALGERIAN_WILAYAS } from '../data/seedData';
 import {
   FileText,
   Clock,
@@ -14,13 +15,17 @@ import {
   Trash2,
   Check,
   X,
-  UserCheck
+  UserCheck,
+  User,
+  Search,
+  Users
 } from 'lucide-react';
 
 interface AdminBookingsViewProps {
   bookings: Booking[];
   riders: Rider[];
   onUpdateBookingStatus: (id: string, status: BookingStatus) => void;
+  onUpdateBooking: (id: string, updatedData: Partial<Booking>) => void;
   onAssignRiders: (bookingId: string, riderIds: string[]) => void;
   onDeleteBooking: (id: string) => void;
 }
@@ -29,6 +34,7 @@ export default function AdminBookingsView({
   bookings,
   riders,
   onUpdateBookingStatus,
+  onUpdateBooking,
   onAssignRiders,
   onDeleteBooking
 }: AdminBookingsViewProps) {
@@ -36,6 +42,50 @@ export default function AdminBookingsView({
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [assigningBooking, setAssigningBooking] = useState<Booking | null>(null);
   const [selectedRiderIds, setSelectedRiderIds] = useState<string[]>([]);
+  const [riderSearchQuery, setRiderSearchQuery] = useState('');
+
+  // Editing Bookings States
+  const [showEditBookingModal, setShowEditBookingModal] = useState<Booking | null>(null);
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editWilaya, setEditWilaya] = useState('');
+  const [editRidersCount, setEditRidersCount] = useState(1);
+  const [editStartPoint, setEditStartPoint] = useState('');
+  const [editEndPoint, setEditEndPoint] = useState('');
+  const [editBookingStatus, setEditBookingStatus] = useState<BookingStatus>('قيد الانتظار');
+
+  // Open edit modal helper
+  const openEditBookingModal = (booking: Booking) => {
+    setShowEditBookingModal(booking);
+    setEditCustomerName(booking.customerName);
+    setEditPhone(booking.phone);
+    setEditDate(booking.date);
+    setEditWilaya(booking.wilaya);
+    setEditRidersCount(booking.ridersCount);
+    setEditStartPoint(booking.startPoint);
+    setEditEndPoint(booking.endPoint);
+    setEditBookingStatus(booking.status);
+    setActiveMenuId(null);
+  };
+
+  // Save edited booking details
+  const handleSaveBookingEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (showEditBookingModal) {
+      onUpdateBooking(showEditBookingModal.id, {
+        customerName: editCustomerName,
+        phone: editPhone,
+        date: editDate,
+        wilaya: editWilaya,
+        ridersCount: editRidersCount,
+        startPoint: editStartPoint,
+        endPoint: editEndPoint,
+        status: editBookingStatus
+      });
+      setShowEditBookingModal(null);
+    }
+  };
 
   // Filtering bookings
   const filteredBookings = bookings.filter((b) => {
@@ -58,6 +108,7 @@ export default function AdminBookingsView({
   const openAssignModal = (booking: Booking) => {
     setAssigningBooking(booking);
     setSelectedRiderIds([...booking.assignedRiders]);
+    setRiderSearchQuery('');
     setActiveMenuId(null);
   };
 
@@ -85,42 +136,7 @@ export default function AdminBookingsView({
   return (
     <div className="space-y-8 text-right font-sans" dir="rtl">
       
-      {/* Dynamic Statistics Block (Stats Bento Grid) */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Total Bookings Card */}
-        <div className="glass-card p-6 flex flex-col items-center text-center hover:scale-[1.01] transition-transform">
-          <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mb-4 border border-indigo-500/20">
-            <FileText size={22} />
-          </div>
-          <span className="text-xs font-semibold text-slate-400">إجمالي الحجوزات</span>
-          <span className="text-3xl font-bold text-white font-headline mt-1">
-            {totalBookingsCount.toLocaleString('en-US')}
-          </span>
-        </div>
 
-        {/* Pending Approval Card */}
-        <div className="glass-card p-6 flex flex-col items-center text-center hover:scale-[1.01] transition-transform">
-          <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mb-4 border border-amber-500/20">
-            <Clock size={22} />
-          </div>
-          <span className="text-xs font-semibold text-slate-400">في انتظار التأكيد</span>
-          <span className="text-3xl font-bold text-amber-400 font-headline mt-1">
-            {pendingCount}
-          </span>
-        </div>
-
-        {/* Top Demand Rider Card */}
-        <div className="glass-card p-6 flex flex-col items-center text-center hover:scale-[1.01] transition-transform">
-          <div className="w-12 h-12 bg-purple-500/10 text-purple-400 rounded-full flex items-center justify-center mb-4 border border-purple-500/20">
-            <Star size={22} className="fill-purple-400 text-purple-400" />
-          </div>
-          <span className="text-xs font-semibold text-slate-400">أكثر الخيالة طلباً</span>
-          <span className="text-xl font-bold text-indigo-300 font-headline mt-2">
-            {topRiderName}
-          </span>
-        </div>
-      </section>
 
       {/* Tabs Filter Row */}
       <div className="flex flex-wrap items-center gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
@@ -163,11 +179,13 @@ export default function AdminBookingsView({
             return (
               <div
                 key={booking.id}
-                className={`glass-card-interactive p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-white/10 hover:scale-[1.005] transition-all duration-200 relative ${
+                onClick={() => openEditBookingModal(booking)}
+                className={`glass-card-interactive p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-white/10 hover:scale-[1.005] transition-all duration-200 relative cursor-pointer ${
                   activeMenuId === booking.id ? 'z-30' : 'z-10'
                 } ${
                   isPending ? 'heritage-border-gold' : 'heritage-border'
                 } ${isCompleted ? 'opacity-70' : ''}`}
+                title="اضغط لتعديل معلومات الحجز"
               >
                 <div className="flex flex-col gap-1 w-full md:w-auto">
                   <div className="flex items-center gap-3 mb-1">
@@ -196,10 +214,15 @@ export default function AdminBookingsView({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-400 text-xs">
-                    <span className="flex items-center gap-1">
+                    <a
+                      href={`tel:${booking.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer"
+                      title="اتصال بالهاتف"
+                    >
                       <Phone size={13} className="text-indigo-400/80" />
-                      {booking.phone}
-                    </span>
+                      <span>{booking.phone}</span>
+                    </a>
                     <span className="flex items-center gap-1">
                       <Calendar size={13} className="text-indigo-400/80" />
                       {booking.date}
@@ -231,7 +254,10 @@ export default function AdminBookingsView({
                 </div>
 
                 {/* Right hand Action buttons */}
-                <div className="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 border-white/5 pt-3 md:pt-0 shrink-0">
+                <div 
+                  className="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 border-white/5 pt-3 md:pt-0 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {isPending && (
                     <button
                       onClick={() => openAssignModal(booking)}
@@ -352,8 +378,8 @@ export default function AdminBookingsView({
 
       {/* Assign Riders Modal Dialog */}
       {assigningBooking && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900/90 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/15 animate-scale-up text-right space-y-4" dir="rtl">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-center p-4 overflow-y-auto items-start sm:items-center">
+          <div className="bg-slate-900/90 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/15 animate-scale-up text-right space-y-4 my-auto" dir="rtl">
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
               <h3 className="text-lg font-bold font-headline text-white">
                 تعيين خيالة لـ: {assigningBooking.customerName}
@@ -366,55 +392,90 @@ export default function AdminBookingsView({
               </button>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              اختر الخيالة والباروديين من القائمة المتاحة لتشكيل الفريق المكلّف بهذا العرض التراثي (المطلوب {assigningBooking.ridersCount} خيالة):
-            </p>
+            {/* Search Input for Riders */}
+            <div className="relative">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <Search size={16} />
+              </span>
+              <input
+                type="text"
+                placeholder="ابحث عن لاعب باسمه أو تخصصه الفني..."
+                value={riderSearchQuery}
+                onChange={(e) => setRiderSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 pr-10 pl-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500"
+              />
+            </div>
+
+            {/* Selection Progress bar/Stat */}
+            <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+              <span className="text-slate-400">
+                العدد المطلوب: <strong className="text-indigo-400">{assigningBooking.ridersCount}</strong>
+              </span>
+              <span className="text-slate-400">
+                المختارين حالياً: <strong className={selectedRiderIds.length >= assigningBooking.ridersCount ? "text-emerald-400" : "text-amber-400"}>{selectedRiderIds.length}</strong>
+              </span>
+            </div>
 
             {/* Riders List Scroll */}
             <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
-              {riders.map((rider) => {
-                const isSelected = selectedRiderIds.includes(rider.id);
-                return (
-                  <div
-                    key={rider.id}
-                    onClick={() => handleRiderToggle(rider.id)}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-white/10 hover:bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
-                        <img
-                          src={rider.image}
-                          alt={rider.name}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm text-white">{rider.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-slate-400">
-                          <span className="bg-white/5 text-purple-300 px-1.5 rounded text-[10px] border border-white/10">
-                            {rider.type}
-                          </span>
-                          <span>• {rider.status}</span>
-                        </div>
-                      </div>
+              {(() => {
+                const filteredRiders = riders.filter((rider) =>
+                  rider.name.toLowerCase().includes(riderSearchQuery.toLowerCase()) ||
+                  rider.type.toLowerCase().includes(riderSearchQuery.toLowerCase())
+                );
+
+                if (filteredRiders.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-xs text-slate-500">
+                      لا يوجد خيالة أو باروديين يطابقون بحثك.
                     </div>
-                    
-                    {/* Checkbox circle indicator */}
+                  );
+                }
+
+                return filteredRiders.map((rider) => {
+                  const isSelected = selectedRiderIds.includes(rider.id);
+                  return (
                     <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                        isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-white/20'
+                      key={rider.id}
+                      onClick={() => handleRiderToggle(rider.id)}
+                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-indigo-500 bg-indigo-500/10'
+                          : 'border-white/10 hover:bg-white/5'
                       }`}
                     >
-                      {isSelected && <Check size={12} strokeWidth={3} />}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
+                          <img
+                            src={rider.image}
+                            alt={rider.name}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-white">{rider.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <span className="bg-white/5 text-purple-300 px-1.5 rounded text-[10px] border border-white/10">
+                              {rider.type}
+                            </span>
+                            <span>• {rider.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Checkbox circle indicator */}
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                          isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-white/20'
+                        }`}
+                      >
+                        {isSelected && <Check size={12} strokeWidth={3} />}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
@@ -432,6 +493,172 @@ export default function AdminBookingsView({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Edit Booking Modal Dialog */}
+      {showEditBookingModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-center p-4 overflow-y-auto items-start sm:items-center">
+          <form
+            onSubmit={handleSaveBookingEdit}
+            className="bg-slate-900/95 backdrop-blur-2xl rounded-2xl max-w-lg w-full max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/15 animate-scale-up text-right space-y-4 scrollbar-thin scrollbar-thumb-white/10 my-auto"
+            dir="rtl"
+          >
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+              <h3 className="text-lg font-bold font-headline text-white">
+                تعديل معلومات الحجز
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowEditBookingModal(null)}
+                className="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  <User size={13} className="text-indigo-400" />
+                  اسم العميل أو الجهة الطالبة
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: بلدية أولاد جلال أو جمعية التراث"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500"
+                  value={editCustomerName}
+                  onChange={(e) => setEditCustomerName(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  <Phone size={13} className="text-indigo-400" />
+                  رقم الهاتف للتواصل
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="مثال: 0661000000"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500 text-left"
+                  dir="ltr"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  <Calendar size={13} className="text-indigo-400" />
+                  التاريخ المخطط للعرض
+                </label>
+                <input
+                  type="date"
+                  required
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500 text-left"
+                  dir="ltr"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  <MapPin size={13} className="text-indigo-400" />
+                  الولاية الجزائرية
+                </label>
+                <select
+                  className="bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs font-medium text-white"
+                  value={editWilaya}
+                  onChange={(e) => setEditWilaya(e.target.value)}
+                >
+                  {ALGERIAN_WILAYAS.map((w) => (
+                    <option key={w} value={w}>
+                      {w}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  <UserPlus size={13} className="text-indigo-400" />
+                  عدد الخيالة المطلوبة
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  max={100}
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white"
+                  value={editRidersCount}
+                  onChange={(e) => setEditRidersCount(parseInt(e.target.value) || 1)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  مكان نقطة الانطلاق واللقاء
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: من أمام المسجد الكبير"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500"
+                  value={editStartPoint}
+                  onChange={(e) => setEditStartPoint(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  مكان نقطة الوصول والعرض
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: ساحة البلدية والاحتفالات"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500"
+                  value={editEndPoint}
+                  onChange={(e) => setEditEndPoint(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                  حالة الحجز الحالية
+                </label>
+                <select
+                  className="bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs font-medium text-white"
+                  value={editBookingStatus}
+                  onChange={(e) => setEditBookingStatus(e.target.value as BookingStatus)}
+                >
+                  <option value="قيد الانتظار">قيد الانتظار</option>
+                  <option value="مؤكد">مؤكد</option>
+                  <option value="مكتمل">مكتمل</option>
+                  <option value="ملغى">ملغى</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowEditBookingModal(null)}
+                className="px-5 py-2 border border-white/10 text-slate-300 font-bold text-xs rounded-full hover:bg-white/5 cursor-pointer transition-colors"
+              >
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 btn-gradient text-white font-bold text-xs rounded-full cursor-pointer transition-opacity"
+              >
+                حفظ التغييرات
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

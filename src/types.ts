@@ -38,4 +38,4 @@ export interface User {
   image: string;
 }
 
-export type NavigationTab = 'bookings' | 'riders' | 'calendar' | 'stats' | 'client-booking';
+export type NavigationTab = 'bookings' | 'riders' | 'calendar' | 'stats' | 'client-booking' | 'profile';
