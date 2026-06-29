@@ -40,7 +40,7 @@ export default function Sidebar({
           <div className="w-14 h-14 rounded-full bg-indigo-950/50 overflow-hidden shrink-0 border-2 border-white/10 group-hover:border-indigo-400 transition-all">
             <img
               className="w-full h-full object-cover"
-              src={ownerPicture}
+              src={ownerPicture || undefined}
               alt="Association Manager Profile"
               referrerPolicy="no-referrer"
             />
@@ -75,7 +75,19 @@ export default function Sidebar({
         </nav>
 
         {/* Footer info in sidebar */}
-        <div className="w-full space-y-4 pt-4 border-t border-white/5 mt-auto">
+        <div className="w-full space-y-3 pt-4 border-t border-white/5 mt-auto">
+          {/* Firestore Active Connection Status Badge */}
+          <div className="bg-emerald-950/20 p-3 rounded-xl flex items-center justify-between border border-emerald-900/30 w-full" dir="rtl">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <p className="text-xs font-bold text-emerald-400">قاعدة البيانات نشطة</p>
+            </div>
+            <p className="text-[10px] text-emerald-300/70 font-medium">Firestore متصل</p>
+          </div>
+
           <div className="bg-white/[0.02] p-3.5 rounded-xl flex items-center gap-3 border border-white/5">
             <MapPin size={16} className="text-indigo-400" />
             <div className="text-right">

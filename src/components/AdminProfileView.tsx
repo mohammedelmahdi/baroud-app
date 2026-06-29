@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { User, Palette, Check, ShieldAlert, Upload, Sparkles } from 'lucide-react';
+import { compressImage } from '../utils/imageCompressor';
 
 interface AdminProfileViewProps {
   ownerName: string;
@@ -51,6 +52,14 @@ export default function AdminProfileView({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  React.useEffect(() => {
+    setNameInput(ownerName);
+  }, [ownerName]);
+
+  React.useEffect(() => {
+    setAppInput(appName);
+  }, [appName]);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setShowSuccessToast(true);
@@ -64,30 +73,21 @@ export default function AdminProfileView({
     triggerToast('تم حفظ تعديلات معلومات الهوية والجمعية بنجاح!');
   };
 
-  // Handle local image file upload and convert to base64
-  const processImageFile = (file: File) => {
+  // Handle local image file upload, compress, and update
+  const processImageFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       alert('يرجى اختيار ملف صورة صالح (PNG, JPG, JPEG, WEBP)');
       return;
     }
     
-    // Check file size (e.g. limit to 2MB for localStorage)
-    if (file.size > 2.5 * 1024 * 1024) {
-      alert('حجم الصورة كبير جداً. يرجى اختيار صورة أقل من 2.5 ميجابايت لتخزينها محلياً.');
-      return;
+    try {
+      const compressedBase64 = await compressImage(file, 300, 300, 0.7);
+      onUpdateOwnerPicture(compressedBase64);
+      triggerToast('تم تحميل وتعيين الصورة الشخصية الجديدة بنجاح!');
+    } catch (err) {
+      console.error('Error compressing profile image:', err);
+      alert('حدث خطأ أثناء معالجة وضغط الصورة.');
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        onUpdateOwnerPicture(reader.result);
-        triggerToast('تم تحميل وتعيين الصورة الشخصية الجديدة بنجاح!');
-      }
-    };
-    reader.onerror = () => {
-      alert('حدث خطأ أثناء قراءة ملف الصورة.');
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,7 +198,7 @@ export default function AdminProfileView({
               <div className="w-24 h-24 rounded-full border-4 border-indigo-500/30 overflow-hidden shadow-xl bg-slate-800">
                 <img
                   className="w-full h-full object-cover"
-                  src={ownerPicture}
+                  src={ownerPicture || undefined}
                   alt="Current Avatar"
                   referrerPolicy="no-referrer"
                   onError={(e) => {

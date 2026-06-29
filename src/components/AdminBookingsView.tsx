@@ -43,6 +43,7 @@ export default function AdminBookingsView({
   const [assigningBooking, setAssigningBooking] = useState<Booking | null>(null);
   const [selectedRiderIds, setSelectedRiderIds] = useState<string[]>([]);
   const [riderSearchQuery, setRiderSearchQuery] = useState('');
+  const [deletingBooking, setDeletingBooking] = useState<Booking | null>(null);
 
   // Editing Bookings States
   const [showEditBookingModal, setShowEditBookingModal] = useState<Booking | null>(null);
@@ -356,9 +357,7 @@ export default function AdminBookingsView({
 
                         <button
                           onClick={() => {
-                            if (confirm('هل أنت متأكد من حذف هذا الحجز نهائيًا؟')) {
-                              onDeleteBooking(booking.id);
-                            }
+                            setDeletingBooking(booking);
                             setActiveMenuId(null);
                           }}
                           className="w-full px-4 py-2 text-xs font-bold text-red-400 hover:bg-white/10 text-right flex items-center gap-2 cursor-pointer"
@@ -447,7 +446,7 @@ export default function AdminBookingsView({
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
                           <img
-                            src={rider.image}
+                            src={rider.image || undefined}
                             alt={rider.name}
                             className="w-full h-full object-cover"
                             referrerPolicy="no-referrer"
@@ -659,6 +658,40 @@ export default function AdminBookingsView({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Custom Delete Booking Confirmation Modal */}
+      {deletingBooking && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[60] flex justify-center p-4 items-center">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-right space-y-4 animate-scale-up" dir="rtl">
+            <div className="flex items-center gap-3 text-red-400">
+              <Trash2 size={24} className="shrink-0" />
+              <h3 className="text-lg font-bold">تأكيد حذف الحجز</h3>
+            </div>
+            
+            <p className="text-sm text-slate-300 leading-relaxed">
+              هل أنت متأكد من حذف حجز <strong className="text-white">{deletingBooking.customerName}</strong> نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
+            </p>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setDeletingBooking(null)}
+                className="px-4 py-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-bold rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteBooking(deletingBooking.id);
+                  setDeletingBooking(null);
+                }}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full transition-colors cursor-pointer"
+              >
+                تأكيد الحذف
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

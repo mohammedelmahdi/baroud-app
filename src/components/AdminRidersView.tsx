@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Rider, RiderType, RiderStatus, Booking } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 import {
   UserPlus,
   Users,
@@ -55,22 +56,22 @@ export default function AdminRidersView({
   const [editPassword, setEditPassword] = useState('');
   const [editStatus, setEditStatus] = useState<RiderStatus>('متاح');
   const [editImage, setEditImage] = useState('');
+  const [deletingRider, setDeletingRider] = useState<Rider | null>(null);
 
-  // Handle image file selection and conversion to Base64
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+  // Handle image file selection, compress and convert to Base64
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          if (isEdit) {
-            setEditImage(reader.result);
-          } else {
-            setNewImage(reader.result);
-          }
+      try {
+        const compressedBase64 = await compressImage(file, 300, 300, 0.7);
+        if (isEdit) {
+          setEditImage(compressedBase64);
+        } else {
+          setNewImage(compressedBase64);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Error compressing image:', err);
+      }
     }
   };
 
@@ -143,8 +144,8 @@ export default function AdminRidersView({
   };
 
   // Stats Counters
-  const totalRiders = riders.length + 42; // Seeded offset to match dashboard screenshot count (48)
-  const availableRiders = riders.filter((r) => r.status === 'متاح').length + 28; // Seeded offset (32)
+  const totalRiders = riders.length;
+  const availableRiders = riders.filter((r) => r.status === 'متاح').length;
 
   return (
     <div className="space-y-8 text-right font-sans" dir="rtl">
@@ -327,7 +328,7 @@ export default function AdminRidersView({
                     <div className="w-14 h-14 rounded-xl overflow-hidden shadow-inner border border-white/10 shrink-0">
                       <img
                         className="w-full h-full object-cover"
-                        src={rider.image}
+                        src={rider.image || undefined}
                         alt={rider.name}
                         referrerPolicy="no-referrer"
                       />
@@ -407,9 +408,7 @@ export default function AdminRidersView({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`هل أنت متأكد من إزالة اللاعب ${rider.name} نهائياً من الجمعية؟`)) {
-                        onDeleteRider(rider.id);
-                      }
+                      setDeletingRider(rider);
                     }}
                     className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                     title="إزالة اللاعب"
@@ -517,7 +516,7 @@ export default function AdminRidersView({
                 <div className="flex items-center gap-4">
                   {newImage ? (
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-white/20 shrink-0">
-                      <img src={newImage} className="w-full h-full object-cover" alt="Preview" />
+                      <img src={newImage || undefined} className="w-full h-full object-cover" alt="Preview" />
                       <button
                         type="button"
                         onClick={() => setNewImage('')}
@@ -643,7 +642,7 @@ export default function AdminRidersView({
                 <div className="flex items-center gap-4">
                   {editImage ? (
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-white/20 shrink-0">
-                      <img src={editImage} className="w-full h-full object-cover" alt="Preview" />
+                      <img src={editImage || undefined} className="w-full h-full object-cover" alt="Preview" />
                       <button
                         type="button"
                         onClick={() => setEditImage('')}
@@ -688,6 +687,40 @@ export default function AdminRidersView({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Custom Delete Rider Confirmation Modal */}
+      {deletingRider && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[60] flex justify-center p-4 items-center">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-right space-y-4 animate-scale-up" dir="rtl">
+            <div className="flex items-center gap-3 text-red-400">
+              <Trash2 size={24} className="shrink-0" />
+              <h3 className="text-lg font-bold">تأكيد إزالة اللاعب</h3>
+            </div>
+            
+            <p className="text-sm text-slate-300 leading-relaxed">
+              هل أنت متأكد من إزالة اللاعب <strong className="text-white">{deletingRider.name}</strong> نهائياً من الجمعية؟ لا يمكن التراجع عن هذا الإجراء.
+            </p>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setDeletingRider(null)}
+                className="px-4 py-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-bold rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteRider(deletingRider.id);
+                  setDeletingRider(null);
+                }}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full transition-colors cursor-pointer"
+              >
+                تأكيد الإزالة
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -12,6 +12,8 @@ import RiderDashboardView from './components/RiderDashboardView';
 import Sidebar from './components/Sidebar';
 import BottomNavBar from './components/BottomNavBar';
 import { LogOut, Plus, X, Menu, Calendar, Users, MapPin, Phone, UserCheck, Sparkles } from 'lucide-react';
+import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from './lib/firebase';
 
 export default function App() {
   // 1. Core Persistent State
@@ -68,14 +70,106 @@ export default function App() {
   const [qbStartPoint, setQbStartPoint] = useState('');
   const [qbEndPoint, setQbEndPoint] = useState('');
 
-  // 4. Persistence effects
+  // Real-time synchronization with Firestore
   useEffect(() => {
-    localStorage.setItem('gac_riders', JSON.stringify(riders));
-  }, [riders]);
+    const ridersCol = collection(db, 'riders');
+    const unsubscribe = onSnapshot(
+      ridersCol,
+      async (snapshot) => {
+        if (snapshot.empty) {
+          console.log('Seeding initial riders to Firestore...');
+          try {
+            for (const r of initialRiders) {
+              await setDoc(doc(db, 'riders', r.id), r);
+            }
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, 'riders');
+          }
+        } else {
+          const list: Rider[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as Rider);
+          });
+          setRiders(list);
+          localStorage.setItem('gac_riders', JSON.stringify(list));
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'riders');
+      }
+    );
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('gac_bookings', JSON.stringify(bookings));
-  }, [bookings]);
+    const bookingsCol = collection(db, 'bookings');
+    const unsubscribe = onSnapshot(
+      bookingsCol,
+      async (snapshot) => {
+        if (snapshot.empty) {
+          console.log('Seeding initial bookings to Firestore...');
+          try {
+            for (const b of initialBookings) {
+              await setDoc(doc(db, 'bookings', b.id), b);
+            }
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, 'bookings');
+          }
+        } else {
+          const list: Booking[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as Booking);
+          });
+          list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          setBookings(list);
+          localStorage.setItem('gac_bookings', JSON.stringify(list));
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'bookings');
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const settingsDoc = doc(db, 'settings', 'app');
+    const unsubscribe = onSnapshot(
+      settingsDoc,
+      async (docSnap) => {
+        if (!docSnap.exists()) {
+          console.log('Seeding initial settings to Firestore...');
+          try {
+            await setDoc(settingsDoc, {
+              ownerName: 'مدير الجمعية',
+              appName: 'GAC',
+              ownerPicture: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQr_DnDfoEvvlXDUFBo-0YHL31Z6qrYy0LcR9z1oThmVqrgOJzb-hfZ23dGNxpFfqlv8AEn4bygqeBVGu8e6fg5clr9A1oojBMWUB9efVDasB9D30GiT_NdICG54dZdoufsH6OoGWXiNVt458HFxsyYxFr-i-8hvsT7saTwjyRQWBPYxNN3l-yVXtAja4p3fmYIPPW4ZIDksWW9FwUffHzZjia-eZWaGyIdqE84MR06s8EOm6ekfJN1Eyl9FoT9-d2CFoYrZRn3hM',
+            });
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, 'settings/app');
+          }
+        } else {
+          const data = docSnap.data();
+          if (data.ownerName) {
+            setOwnerName(data.ownerName);
+            localStorage.setItem('gac_owner_name', data.ownerName);
+          }
+          if (data.appName) {
+            setAppName(data.appName);
+            localStorage.setItem('gac_app_name', data.appName);
+          }
+          if (data.ownerPicture) {
+            setOwnerPicture(data.ownerPicture);
+            localStorage.setItem('gac_owner_picture', data.ownerPicture);
+          }
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'settings/app');
+      }
+    );
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (session) {
@@ -84,19 +178,6 @@ export default function App() {
       localStorage.removeItem('gac_session');
     }
   }, [session]);
-
-  // 5. Owner Settings Persistence & Theme Injector
-  useEffect(() => {
-    localStorage.setItem('gac_owner_name', ownerName);
-  }, [ownerName]);
-
-  useEffect(() => {
-    localStorage.setItem('gac_app_name', appName);
-  }, [appName]);
-
-  useEffect(() => {
-    localStorage.setItem('gac_owner_picture', ownerPicture);
-  }, [ownerPicture]);
 
   useEffect(() => {
     localStorage.setItem('gac_theme', appTheme);
@@ -126,62 +207,114 @@ export default function App() {
     }
   }, [appTheme]);
 
-  // 5. Database / State Operations
-  const handleAddBooking = (bookingData: Omit<Booking, 'id' | 'status' | 'assignedRiders' | 'createdAt'>) => {
+  // 5. Database / State Operations (using Firestore)
+  const handleAddBooking = async (bookingData: Omit<Booking, 'id' | 'status' | 'assignedRiders' | 'createdAt'>) => {
+    const id = `booking_${Date.now()}`;
     const newBooking: Booking = {
       ...bookingData,
-      id: `booking_${Date.now()}`,
+      id,
       status: 'قيد الانتظار',
       assignedRiders: [],
       createdAt: new Date().toISOString(),
     };
-    setBookings((prev) => [newBooking, ...prev]);
+    try {
+      await setDoc(doc(db, 'bookings', id), newBooking);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `bookings/${id}`);
+    }
   };
 
-  const handleUpdateBookingStatus = (id: string, status: BookingStatus) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status } : b))
-    );
+  const handleUpdateBookingStatus = async (id: string, status: BookingStatus) => {
+    try {
+      await updateDoc(doc(db, 'bookings', id), { status });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `bookings/${id}`);
+    }
   };
 
-  const handleUpdateBooking = (id: string, updatedData: Partial<Booking>) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, ...updatedData } : b))
-    );
+  const handleUpdateBooking = async (id: string, updatedData: Partial<Booking>) => {
+    try {
+      await updateDoc(doc(db, 'bookings', id), updatedData);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `bookings/${id}`);
+    }
   };
 
-  const handleAssignRiders = (bookingId: string, riderIds: string[]) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, assignedRiders: riderIds } : b))
-    );
+  const handleAssignRiders = async (bookingId: string, riderIds: string[]) => {
+    try {
+      await updateDoc(doc(db, 'bookings', bookingId), { assignedRiders: riderIds });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `bookings/${bookingId}`);
+    }
   };
 
-  const handleDeleteBooking = (id: string) => {
-    setBookings((prev) => prev.filter((b) => b.id !== id));
+  const handleDeleteBooking = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'bookings', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `bookings/${id}`);
+    }
   };
 
-  const handleAddRider = (riderData: Omit<Rider, 'id'>) => {
+  const handleAddRider = async (riderData: Omit<Rider, 'id'>) => {
+    const id = `rider_${Date.now()}`;
     const newRider: Rider = {
       ...riderData,
-      id: `rider_${Date.now()}`,
+      id,
     };
-    setRiders((prev) => [...prev, newRider]);
+    try {
+      await setDoc(doc(db, 'riders', id), newRider);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `riders/${id}`);
+    }
   };
 
-  const handleUpdateRider = (id: string, updatedData: Partial<Rider>) => {
-    setRiders((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...updatedData } : r))
-    );
+  const handleUpdateRider = async (id: string, updatedData: Partial<Rider>) => {
+    try {
+      await updateDoc(doc(db, 'riders', id), updatedData);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `riders/${id}`);
+    }
   };
 
-  const handleDeleteRider = (id: string) => {
-    setRiders((prev) => prev.filter((r) => r.id !== id));
+  const handleDeleteRider = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'riders', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `riders/${id}`);
+    }
+  };
+
+  const handleUpdateOwnerName = async (name: string) => {
+    setOwnerName(name);
+    try {
+      await setDoc(doc(db, 'settings', 'app'), { ownerName: name }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/app');
+    }
+  };
+
+  const handleUpdateAppName = async (name: string) => {
+    setAppName(name);
+    try {
+      await setDoc(doc(db, 'settings', 'app'), { appName: name }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/app');
+    }
+  };
+
+  const handleUpdateOwnerPicture = async (picUrl: string) => {
+    setOwnerPicture(picUrl);
+    try {
+      await setDoc(doc(db, 'settings', 'app'), { ownerPicture: picUrl }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/app');
+    }
   };
 
   const handleLoginSuccess = (userSession: typeof session) => {
     setSession(userSession);
     setShowLogin(false);
-    // Redirect to bookings default on admin, or keep standard
     setActiveTab('bookings');
   };
 
@@ -225,6 +358,7 @@ export default function App() {
           rider={activeRider}
           bookings={bookings}
           onLogout={handleLogout}
+          appName={appName}
         />
       );
     }
@@ -237,6 +371,7 @@ export default function App() {
         riders={riders}
         onLoginSuccess={handleLoginSuccess}
         onNavigateToClient={() => setShowLogin(false)}
+        appName={appName}
       />
     );
   }
@@ -247,6 +382,7 @@ export default function App() {
       <ClientBookingView
         onAddBooking={handleAddBooking}
         onNavigateToLogin={() => setShowLogin(true)}
+        appName={appName}
       />
     );
   }
@@ -275,7 +411,7 @@ export default function App() {
           <div className="w-10 h-10 rounded-full border-2 border-white/20 group-hover:border-indigo-400 transition-all bg-slate-800 overflow-hidden shrink-0">
             <img
               className="w-full h-full object-cover"
-              src={ownerPicture}
+              src={ownerPicture || undefined}
               alt="Manager Avatar"
               referrerPolicy="no-referrer"
             />
@@ -355,11 +491,11 @@ export default function App() {
         {activeTab === 'profile' && (
           <AdminProfileView
             ownerName={ownerName}
-            onUpdateOwnerName={setOwnerName}
+            onUpdateOwnerName={handleUpdateOwnerName}
             appName={appName}
-            onUpdateAppName={setAppName}
+            onUpdateAppName={handleUpdateAppName}
             ownerPicture={ownerPicture}
-            onUpdateOwnerPicture={setOwnerPicture}
+            onUpdateOwnerPicture={handleUpdateOwnerPicture}
             appTheme={appTheme}
             onUpdateAppTheme={setAppTheme}
           />

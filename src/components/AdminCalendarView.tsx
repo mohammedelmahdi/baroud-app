@@ -7,8 +7,21 @@ interface AdminCalendarViewProps {
 }
 
 export default function AdminCalendarView({ bookings }: AdminCalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 6, 1)); // Set to July 2024 (seed data months)
-  const [selectedDateStr, setSelectedDateStr] = useState<string | null>('2024-07-12');
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(() => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
+
+  const getLocalDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const firstDayIndex = (year: number, month: number) => new Date(year, month, 1).getDay();
@@ -41,7 +54,7 @@ export default function AdminCalendarView({ bookings }: AdminCalendarViewProps) 
 
   // Find bookings for specific cells
   const getBookingsForDate = (date: Date) => {
-    const localStr = date.toISOString().split('T')[0];
+    const localStr = getLocalDateString(date);
     return bookings.filter((b) => b.date === localStr);
   };
 
@@ -96,7 +109,7 @@ export default function AdminCalendarView({ bookings }: AdminCalendarViewProps) 
                 return <div key={`empty-${idx}`} className="aspect-square bg-white/5 rounded-lg" />;
               }
 
-              const dateString = cell.toISOString().split('T')[0];
+              const dateString = getLocalDateString(cell);
               const isSelected = selectedDateStr === dateString;
               const dateBookings = getBookingsForDate(cell);
               const hasBookings = dateBookings.length > 0;

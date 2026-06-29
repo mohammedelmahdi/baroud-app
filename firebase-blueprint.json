@@ -1,0 +1,141 @@
+{
+  "entities": {
+    "Rider": {
+      "title": "Rider",
+      "description": "A rider representing standard members of the Algerian Fantasia group",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier of the rider"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the rider"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["بارود", "خيال"],
+          "description": "Rider weapon and style class"
+        },
+        "username": {
+          "type": "string",
+          "description": "Rider handle for authentication"
+        },
+        "password": {
+          "type": "string",
+          "description": "Optional local login password credential"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["متاح", "في مهمة"],
+          "description": "Rider availability status"
+        },
+        "image": {
+          "type": "string",
+          "description": "Unsplash or customized image avatar URL"
+        }
+      },
+      "required": ["id", "name", "type", "username", "status", "image"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A reservation booking detail representing scheduled performance events",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier of the booking"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Client reservation contact name"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Algerian phone contact number"
+        },
+        "date": {
+          "type": "string",
+          "description": "Scheduled show day calendar representation"
+        },
+        "wilaya": {
+          "type": "string",
+          "description": "Algerian State division of destination"
+        },
+        "ridersCount": {
+          "type": "number",
+          "description": "Requested or maximum rider turnout count"
+        },
+        "startPoint": {
+          "type": "string",
+          "description": "Starting geographical place marker description"
+        },
+        "endPoint": {
+          "type": "string",
+          "description": "Geographical performance event target destination marker"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["قيد الانتظار", "مؤكد", "مكتمل", "ملغى"],
+          "description": "Workflow phase status of the booked reservation"
+        },
+        "assignedRiders": {
+          "type": "array",
+          "description": "Rider system document IDs assigned to fulfill this specific booking"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating the creation of the record"
+        }
+      },
+      "required": [
+        "id",
+        "customerName",
+        "phone",
+        "date",
+        "wilaya",
+        "ridersCount",
+        "startPoint",
+        "endPoint",
+        "status",
+        "assignedRiders",
+        "createdAt"
+      ]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Application general metadata configuration settings",
+      "type": "object",
+      "properties": {
+        "ownerName": {
+          "type": "string",
+          "description": "Name of the association director/owner"
+        },
+        "appName": {
+          "type": "string",
+          "description": "System app name"
+        },
+        "ownerPicture": {
+          "type": "string",
+          "description": "Visual picture URL of the director"
+        }
+      },
+      "required": ["ownerName", "appName", "ownerPicture"]
+    }
+  },
+  "firestore": {
+    "riders": {
+      "schema": "Rider",
+      "description": "Collection of fantasia riders"
+    },
+    "bookings": {
+      "schema": "Booking",
+      "description": "Collection of booked show events and performance sessions"
+    },
+    "settings": {
+      "schema": "Settings",
+      "description": "Persistent general configurations for the application branding"
+    }
+  }
+}

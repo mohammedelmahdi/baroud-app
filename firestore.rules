@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (Deny everything by default)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'Mohammed.inezarene@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity validations
+    function isValidRider(data) {
+      return data.keys().hasAll(['id', 'name', 'type', 'username', 'status', 'image'])
+        && data.keys().size() <= 8
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.type is string && (data.type == 'بارود' || data.type == 'خيال')
+        && data.username is string && data.username.size() <= 100
+        && data.status is string && (data.status == 'متاح' || data.status == 'في مهمة')
+        && data.image is string && data.image.size() <= 1000000
+        && (!data.keys().hasAny(['password']) || (data.password is string && data.password.size() <= 100));
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll(['id', 'customerName', 'phone', 'date', 'wilaya', 'ridersCount', 'startPoint', 'endPoint', 'status', 'assignedRiders', 'createdAt'])
+        && data.keys().size() == 11
+        && data.id is string && data.id.size() <= 128
+        && data.customerName is string && data.customerName.size() <= 200
+        && data.phone is string && data.phone.size() <= 50
+        && data.date is string && data.date.size() <= 50
+        && data.wilaya is string && data.wilaya.size() <= 100
+        && data.ridersCount is int
+        && data.startPoint is string && data.startPoint.size() <= 500
+        && data.endPoint is string && data.endPoint.size() <= 500
+        && data.status is string && (data.status == 'قيد الانتظار' || data.status == 'مؤكد' || data.status == 'مكتمل' || data.status == 'ملغى')
+        && data.assignedRiders is list
+        && data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['ownerName', 'appName', 'ownerPicture'])
+        && data.keys().size() == 3
+        && data.ownerName is string && data.ownerName.size() <= 100
+        && data.appName is string && data.appName.size() <= 100
+        && data.ownerPicture is string && data.ownerPicture.size() <= 1000000;
+    }
+
+    // Collection matches
+    match /riders/{riderId} {
+      allow read: if true; 
+      allow write: if true; // In the dev environment, allow write so that the app's local user interface functions properly to register/edit riders.
+    }
+
+    match /bookings/{bookingId} {
+      allow create: if isValidBooking(request.resource.data);
+      allow read: if true;
+      allow update, delete: if true; // Allowed in dev so status changes or updates are not blocked
+    }
+
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

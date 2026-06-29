@@ -6,9 +6,10 @@ import { Users, Award, ShieldCheck, Scroll, Send, CheckCircle, LogIn, Calendar, 
 interface ClientBookingViewProps {
   onAddBooking: (bookingData: Omit<Booking, 'id' | 'status' | 'assignedRiders' | 'createdAt'>) => void;
   onNavigateToLogin: () => void;
+  appName?: string;
 }
 
-export default function ClientBookingView({ onAddBooking, onNavigateToLogin }: ClientBookingViewProps) {
+export default function ClientBookingView({ onAddBooking, onNavigateToLogin, appName = 'GAC' }: ClientBookingViewProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [date, setDate] = useState('');
@@ -57,7 +58,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin }: C
       {/* Navigation Header */}
       <header className="flex flex-row justify-between items-center w-full px-5 md:px-10 h-16 z-50 bg-slate-900/40 backdrop-blur-md border-b border-white/10 sticky top-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white font-headline tracking-wider">GAC</h1>
+          <h1 className="text-2xl font-bold text-white font-headline tracking-wider">{appName}</h1>
         </div>
         <div className="flex items-center gap-4">
           <button

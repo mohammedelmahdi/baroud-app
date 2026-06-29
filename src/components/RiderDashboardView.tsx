@@ -6,9 +6,10 @@ interface RiderDashboardViewProps {
   rider: Rider;
   bookings: Booking[];
   onLogout: () => void;
+  appName?: string;
 }
 
-export default function RiderDashboardView({ rider, bookings, onLogout }: RiderDashboardViewProps) {
+export default function RiderDashboardView({ rider, bookings, onLogout, appName = 'GAC' }: RiderDashboardViewProps) {
   // Get assignments dynamically
   const assignedBookings = bookings.filter((b) => b.assignedRiders.includes(rider.id));
 
@@ -36,7 +37,7 @@ export default function RiderDashboardView({ rider, bookings, onLogout }: RiderD
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 shrink-0">
             <img
               className="w-full h-full object-cover"
-              src={rider.image}
+              src={rider.image || undefined}
               alt={rider.name}
               referrerPolicy="no-referrer"
             />
@@ -47,7 +48,7 @@ export default function RiderDashboardView({ rider, bookings, onLogout }: RiderD
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-white font-headline tracking-wider">GAC</h1>
+        <h1 className="text-2xl font-bold text-white font-headline tracking-wider">{appName}</h1>
 
         <button
           onClick={onLogout}
