@@ -92,7 +92,7 @@ export default function Sidebar({
             <MapPin size={16} className="text-indigo-400" />
             <div className="text-right">
               <p className="text-[10px] text-slate-400 font-medium">الولاية والمقر الرئيسي</p>
-              <p className="text-xs font-bold text-slate-200 mt-0.5">الجزائر العاصمة، الجزائر</p>
+              <p className="text-xs font-bold text-slate-200 mt-0.5">ولاية باتنة، الجزائر</p>
             </div>
           </div>
 
