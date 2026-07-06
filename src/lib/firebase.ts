@@ -3,15 +3,25 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
-// Support both environment variables (VITE_ prefixed for client access in Vite) and the local JSON config file
+// Support both environment variables, local JSON, and localStorage overrides (for custom external deployments)
+let customConfig: any = null;
+try {
+  const stored = localStorage.getItem('custom_firebase_config');
+  if (stored) {
+    customConfig = JSON.parse(stored);
+  }
+} catch (e) {
+  console.error('Failed to parse custom firebase config from localStorage', e);
+}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson.appId,
+  apiKey: customConfig?.apiKey || import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
+  authDomain: customConfig?.authDomain || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
+  projectId: customConfig?.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
+  firestoreDatabaseId: customConfig?.firestoreDatabaseId || import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId || '(default)',
+  storageBucket: customConfig?.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
+  messagingSenderId: customConfig?.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
+  appId: customConfig?.appId || import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson.appId,
 };
 
 const app = initializeApp(firebaseConfig);

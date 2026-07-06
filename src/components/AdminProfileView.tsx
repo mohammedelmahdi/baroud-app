@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { User, Palette, Check, ShieldAlert, Upload, Sparkles, Scale, Hash } from 'lucide-react';
+import { User, Palette, Check, ShieldAlert, Upload, Sparkles, Scale, Hash, Database, Trash2 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompressor';
 
 interface AdminProfileViewProps {
@@ -59,8 +59,69 @@ export default function AdminProfileView({
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+
+  // Custom Firebase configuration states
+  const [dbApiKey, setDbApiKey] = useState('');
+  const [dbAuthDomain, setDbAuthDomain] = useState('');
+  const [dbProjectId, setDbProjectId] = useState('');
+  const [dbDatabaseId, setDbDatabaseId] = useState('');
+  const [dbStorageBucket, setDbStorageBucket] = useState('');
+  const [dbMessagingSenderId, setDbMessagingSenderId] = useState('');
+  const [dbAppId, setDbAppId] = useState('');
+  const [isUsingCustomFirebase, setIsUsingCustomFirebase] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('custom_firebase_config');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setDbApiKey(parsed.apiKey || '');
+        setDbAuthDomain(parsed.authDomain || '');
+        setDbProjectId(parsed.projectId || '');
+        setDbDatabaseId(parsed.firestoreDatabaseId || '');
+        setDbStorageBucket(parsed.storageBucket || '');
+        setDbMessagingSenderId(parsed.messagingSenderId || '');
+        setDbAppId(parsed.appId || '');
+        setIsUsingCustomFirebase(true);
+      }
+    } catch (e) {
+      console.error('Failed to load custom firebase settings', e);
+    }
+  }, []);
+
+  const handleSaveCustomFirebase = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dbApiKey || !dbProjectId || !dbAppId) {
+      alert('يرجى ملء الحقول الأساسية على الأقل: API Key, Project ID, App ID');
+      return;
+    }
+    const config = {
+      apiKey: dbApiKey.trim(),
+      authDomain: dbAuthDomain.trim() || `${dbProjectId.trim()}.firebaseapp.com`,
+      projectId: dbProjectId.trim(),
+      firestoreDatabaseId: dbDatabaseId.trim() || '(default)',
+      storageBucket: dbStorageBucket.trim() || `${dbProjectId.trim()}.appspot.com`,
+      messagingSenderId: dbMessagingSenderId.trim(),
+      appId: dbAppId.trim(),
+    };
+    localStorage.setItem('custom_firebase_config', JSON.stringify(config));
+    triggerToast('تم حفظ إعدادات Firebase المخصصة! جاري إعادة تشغيل التطبيق للاتصال بالخادم الجديد...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  };
+
+  const handleClearCustomFirebase = () => {
+    if (window.confirm('هل أنت متأكد من رغبتك في حذف الاتصال المخصص والعودة لقاعدة بيانات الساندبوكس الافتراضية؟')) {
+      localStorage.removeItem('custom_firebase_config');
+      triggerToast('تمت العودة لقاعدة البيانات الافتراضية. جاري إعادة تحميل الصفحة...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
+  };
 
   React.useEffect(() => {
     setNameInput(ownerName);
@@ -385,6 +446,144 @@ export default function AdminProfileView({
               );
             })}
           </div>
+        </div>
+
+        {/* Section 4: Custom Firebase Database Credentials */}
+        <div className="glass-card p-6 border border-white/10 space-y-6">
+          <div className="flex justify-between items-center border-b border-white/5 pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Database size={18} className="text-indigo-400" />
+              ربط مشروع Firebase الخاص بك (للعمل على Netlify أو الاستضافة الخارجية)
+            </h3>
+            {isUsingCustomFirebase ? (
+              <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 px-2 rounded-full py-1 text-emerald-400 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                متصل بمشروعك الخاص
+              </span>
+            ) : (
+              <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 px-2 rounded-full py-1 text-amber-400 font-bold">
+                متصل بقاعدة البيانات المشتركة
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-400 leading-relaxed font-medium">
+            هل ترغب في ربط التطبيق بقاعدة البيانات ومشروع Firebase الخاص بك مباشرة (مثل مشروعك <strong className="text-white">"oulad soltan app"</strong>)؟
+            أدخل إعدادات مشروع Firebase الخاص بك بالأسفل. سيتم تخزين هذه الإعدادات محلياً في متصفحك وسيستخدمها التطبيق لتخزين كل الحجوزات والمخزون في قاعدة بياناتك الخاصة بدلاً من الساندبوكس المشترك.
+          </p>
+
+          <form onSubmit={handleSaveCustomFirebase} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">API Key (مطلوب)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="AIzaSy..."
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbApiKey}
+                  onChange={(e) => setDbApiKey(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">Project ID (مطلوب)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="oulad-soltan-app"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbProjectId}
+                  onChange={(e) => setDbProjectId(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">App ID (مطلوب)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="1:1234567890:web:abcd..."
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbAppId}
+                  onChange={(e) => setDbAppId(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">Auth Domain (اختياري)</label>
+                <input
+                  type="text"
+                  placeholder="oulad-soltan-app.firebaseapp.com"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbAuthDomain}
+                  onChange={(e) => setDbAuthDomain(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">Firestore Database ID (اختياري)</label>
+                <input
+                  type="text"
+                  placeholder="(default)"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbDatabaseId}
+                  onChange={(e) => setDbDatabaseId(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">Storage Bucket (اختياري)</label>
+                <input
+                  type="text"
+                  placeholder="oulad-soltan-app.appspot.com"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbStorageBucket}
+                  onChange={(e) => setDbStorageBucket(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-300">Messaging Sender ID (اختياري)</label>
+                <input
+                  type="text"
+                  placeholder="1234567890"
+                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-600 text-left"
+                  dir="ltr"
+                  value={dbMessagingSenderId}
+                  onChange={(e) => setDbMessagingSenderId(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+              {isUsingCustomFirebase ? (
+                <button
+                  type="button"
+                  onClick={handleClearCustomFirebase}
+                  className="px-5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs rounded-full cursor-pointer flex items-center gap-1.5 transition-all border border-rose-500/10"
+                >
+                  <Trash2 size={14} />
+                  <span>حذف الاتصال المخصص والعودة للوضع الافتراضي</span>
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <button
+                type="submit"
+                className="px-6 py-2.5 btn-gradient text-white font-bold text-xs rounded-full cursor-pointer transition-opacity"
+              >
+                تنشيط وحفظ اتصال Firebase الجديد
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Info advice card */}

@@ -1,10 +1,10 @@
 {
-  "projectId": "stoked-airport-h4dh4",
-  "appId": "1:932838880721:web:6bf897eb51e0fa792adcf0",
-  "apiKey": "AIzaSyBNKx3HqF7UM7oUW88umKUAuZ9c0d3b8No",
-  "authDomain": "stoked-airport-h4dh4.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-gac-50372dfe-2a64-42b6-a481-1aba0eb32b4a",
-  "storageBucket": "stoked-airport-h4dh4.firebasestorage.app",
-  "messagingSenderId": "932838880721",
-  "measurementId": ""
+  "projectId": "oulad-soltan-app",
+  "appId": "1:865734108098:web:9c10d1f6727fd1b414ac5b",
+  "apiKey": "AIzaSyCRLPYlKcLcT_UHS_D3Pa5oxOIVj62OJqE",
+  "authDomain": "oulad-soltan-app.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "oulad-soltan-app.firebasestorage.app",
+  "messagingSenderId": "865734108098",
+  "measurementId": "G-R0VMPD4FN5"
 }

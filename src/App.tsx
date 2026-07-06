@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Booking, Rider, NavigationTab, BookingStatus, UserRole, AppNotification } from './types';
-import { ALGERIAN_WILAYAS } from './data/seedData';
+import { ALGERIAN_WILAYAS, initialRiders, initialBookings } from './data/seedData';
 import ClientBookingView from './components/ClientBookingView';
 import LoginView from './components/LoginView';
 import AdminBookingsView from './components/AdminBookingsView';
@@ -91,13 +91,24 @@ export default function App() {
     const ridersCol = collection(db, 'riders');
     const unsubscribe = onSnapshot(
       ridersCol,
-      (snapshot) => {
-        const list: Rider[] = [];
-        snapshot.forEach((docSnap) => {
-          list.push(docSnap.data() as Rider);
-        });
-        setRiders(list);
-        localStorage.setItem('gac_riders', JSON.stringify(list));
+      async (snapshot) => {
+        if (snapshot.empty) {
+          console.log('Seeding initial riders...');
+          try {
+            for (const r of initialRiders) {
+              await setDoc(doc(db, 'riders', r.id), r);
+            }
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, 'riders-seeding');
+          }
+        } else {
+          const list: Rider[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as Rider);
+          });
+          setRiders(list);
+          localStorage.setItem('gac_riders', JSON.stringify(list));
+        }
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'riders');
@@ -110,14 +121,25 @@ export default function App() {
     const bookingsCol = collection(db, 'bookings');
     const unsubscribe = onSnapshot(
       bookingsCol,
-      (snapshot) => {
-        const list: Booking[] = [];
-        snapshot.forEach((docSnap) => {
-          list.push(docSnap.data() as Booking);
-        });
-        list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        setBookings(list);
-        localStorage.setItem('gac_bookings', JSON.stringify(list));
+      async (snapshot) => {
+        if (snapshot.empty) {
+          console.log('Seeding initial bookings...');
+          try {
+            for (const b of initialBookings) {
+              await setDoc(doc(db, 'bookings', b.id), b);
+            }
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, 'bookings-seeding');
+          }
+        } else {
+          const list: Booking[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as Booking);
+          });
+          list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          setBookings(list);
+          localStorage.setItem('gac_bookings', JSON.stringify(list));
+        }
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'bookings');
