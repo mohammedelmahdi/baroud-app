@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { Booking, Rider, NavigationTab, BookingStatus, UserRole } from './types';
-import { initialRiders, initialBookings, ALGERIAN_WILAYAS } from './data/seedData';
+import { Booking, Rider, NavigationTab, BookingStatus, UserRole, AppNotification } from './types';
+import { ALGERIAN_WILAYAS } from './data/seedData';
 import ClientBookingView from './components/ClientBookingView';
 import LoginView from './components/LoginView';
 import AdminBookingsView from './components/AdminBookingsView';
@@ -11,21 +11,24 @@ import AdminProfileView from './components/AdminProfileView';
 import RiderDashboardView from './components/RiderDashboardView';
 import Sidebar from './components/Sidebar';
 import BottomNavBar from './components/BottomNavBar';
+import NotificationBell from './components/NotificationBell';
 import { LogOut, Plus, X, Menu, Calendar, Users, MapPin, Phone, UserCheck, Sparkles } from 'lucide-react';
-import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './lib/firebase';
 
 export default function App() {
   // 1. Core Persistent State
   const [riders, setRiders] = useState<Rider[]>(() => {
     const saved = localStorage.getItem('gac_riders');
-    return saved ? JSON.parse(saved) : initialRiders;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [bookings, setBookings] = useState<Booking[]>(() => {
     const saved = localStorage.getItem('gac_bookings');
-    return saved ? JSON.parse(saved) : initialBookings;
+    return saved ? JSON.parse(saved) : [];
   });
+
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Owner settings persistent states
   const [ownerName, setOwnerName] = useState<string>(() => {
@@ -43,6 +46,16 @@ export default function App() {
   const [appTheme, setAppTheme] = useState<'cosmic' | 'royal'>(() => {
     const saved = localStorage.getItem('gac_theme');
     return saved === 'royal' ? 'royal' : 'cosmic';
+  });
+
+  const [ownedQuantityKg, setOwnedQuantityKg] = useState<number>(() => {
+    const val = localStorage.getItem('gac_owned_quantity_kg');
+    return val ? Number(val) : 100; // default to a friendly initial 100
+  });
+
+  const [ownedCount, setOwnedCount] = useState<number>(() => {
+    const val = localStorage.getItem('gac_owned_count');
+    return val ? Number(val) : 50; // default to a friendly initial 50
   });
 
   // 2. Navigation & Portal States
@@ -64,35 +77,27 @@ export default function App() {
   // Quick booking form fields
   const [qbName, setQbName] = useState('');
   const [qbPhone, setQbPhone] = useState('');
+  const [qbPhoneError, setQbPhoneError] = useState('');
   const [qbDate, setQbDate] = useState('');
   const [qbWilaya, setQbWilaya] = useState(ALGERIAN_WILAYAS[0]);
-  const [qbRidersCount, setQbRidersCount] = useState(10);
+  const [qbRidersCount, setQbRidersCount] = useState(2);
   const [qbStartPoint, setQbStartPoint] = useState('');
   const [qbEndPoint, setQbEndPoint] = useState('');
+  const [qbQuantityKg, setQbQuantityKg] = useState<number | ''>('');
+  const [qbCount, setQbCount] = useState<number | ''>('');
 
   // Real-time synchronization with Firestore
   useEffect(() => {
     const ridersCol = collection(db, 'riders');
     const unsubscribe = onSnapshot(
       ridersCol,
-      async (snapshot) => {
-        if (snapshot.empty) {
-          console.log('Seeding initial riders to Firestore...');
-          try {
-            for (const r of initialRiders) {
-              await setDoc(doc(db, 'riders', r.id), r);
-            }
-          } catch (err) {
-            handleFirestoreError(err, OperationType.WRITE, 'riders');
-          }
-        } else {
-          const list: Rider[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as Rider);
-          });
-          setRiders(list);
-          localStorage.setItem('gac_riders', JSON.stringify(list));
-        }
+      (snapshot) => {
+        const list: Rider[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as Rider);
+        });
+        setRiders(list);
+        localStorage.setItem('gac_riders', JSON.stringify(list));
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'riders');
@@ -105,28 +110,36 @@ export default function App() {
     const bookingsCol = collection(db, 'bookings');
     const unsubscribe = onSnapshot(
       bookingsCol,
-      async (snapshot) => {
-        if (snapshot.empty) {
-          console.log('Seeding initial bookings to Firestore...');
-          try {
-            for (const b of initialBookings) {
-              await setDoc(doc(db, 'bookings', b.id), b);
-            }
-          } catch (err) {
-            handleFirestoreError(err, OperationType.WRITE, 'bookings');
-          }
-        } else {
-          const list: Booking[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as Booking);
-          });
-          list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-          setBookings(list);
-          localStorage.setItem('gac_bookings', JSON.stringify(list));
-        }
+      (snapshot) => {
+        const list: Booking[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as Booking);
+        });
+        list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        setBookings(list);
+        localStorage.setItem('gac_bookings', JSON.stringify(list));
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'bookings');
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const notificationsCol = collection(db, 'notifications');
+    const unsubscribe = onSnapshot(
+      notificationsCol,
+      (snapshot) => {
+        const list: AppNotification[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as AppNotification);
+        });
+        list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        setNotifications(list);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'notifications');
       }
     );
     return () => unsubscribe();
@@ -144,6 +157,8 @@ export default function App() {
               ownerName: 'مدير الجمعية',
               appName: 'GAC',
               ownerPicture: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQr_DnDfoEvvlXDUFBo-0YHL31Z6qrYy0LcR9z1oThmVqrgOJzb-hfZ23dGNxpFfqlv8AEn4bygqeBVGu8e6fg5clr9A1oojBMWUB9efVDasB9D30GiT_NdICG54dZdoufsH6OoGWXiNVt458HFxsyYxFr-i-8hvsT7saTwjyRQWBPYxNN3l-yVXtAja4p3fmYIPPW4ZIDksWW9FwUffHzZjia-eZWaGyIdqE84MR06s8EOm6ekfJN1Eyl9FoT9-d2CFoYrZRn3hM',
+              ownedQuantityKg: 100,
+              ownedCount: 50,
             });
           } catch (err) {
             handleFirestoreError(err, OperationType.WRITE, 'settings/app');
@@ -161,6 +176,14 @@ export default function App() {
           if (data.ownerPicture) {
             setOwnerPicture(data.ownerPicture);
             localStorage.setItem('gac_owner_picture', data.ownerPicture);
+          }
+          if (data.ownedQuantityKg !== undefined) {
+            setOwnedQuantityKg(data.ownedQuantityKg);
+            localStorage.setItem('gac_owned_quantity_kg', String(data.ownedQuantityKg));
+          }
+          if (data.ownedCount !== undefined) {
+            setOwnedCount(data.ownedCount);
+            localStorage.setItem('gac_owned_count', String(data.ownedCount));
           }
         }
       },
@@ -208,17 +231,38 @@ export default function App() {
   }, [appTheme]);
 
   // 5. Database / State Operations (using Firestore)
-  const handleAddBooking = async (bookingData: Omit<Booking, 'id' | 'status' | 'assignedRiders' | 'createdAt'>) => {
+  const handleAddBooking = async (bookingData: Omit<Booking, 'id' | 'status' | 'assignedRiders' | 'createdAt'> & { assignedRiders?: string[] }) => {
     const id = `booking_${Date.now()}`;
+    const cleanData: any = {};
+    Object.keys(bookingData).forEach((key) => {
+      const val = (bookingData as any)[key];
+      if (val !== undefined && val !== null) {
+        cleanData[key] = val;
+      }
+    });
+
     const newBooking: Booking = {
-      ...bookingData,
+      ...cleanData,
       id,
       status: 'قيد الانتظار',
-      assignedRiders: [],
+      assignedRiders: cleanData.assignedRiders || [],
       createdAt: new Date().toISOString(),
     };
     try {
       await setDoc(doc(db, 'bookings', id), newBooking);
+
+      // Create a notification for the Admin
+      const notifId = `notif_${Date.now()}`;
+      const newNotification: AppNotification = {
+        id: notifId,
+        title: 'حجز جديد قيد الانتظار',
+        message: `قام الزبون ${newBooking.customerName} بطلب حجز جديد في ولاية ${newBooking.wilaya} بتاريخ ${newBooking.date}.`,
+        type: 'new_booking',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        bookingId: id,
+      };
+      await setDoc(doc(db, 'notifications', notifId), newNotification);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `bookings/${id}`);
     }
@@ -234,7 +278,14 @@ export default function App() {
 
   const handleUpdateBooking = async (id: string, updatedData: Partial<Booking>) => {
     try {
-      await updateDoc(doc(db, 'bookings', id), updatedData);
+      const cleanData: any = {};
+      Object.keys(updatedData).forEach((key) => {
+        const val = (updatedData as any)[key];
+        if (val !== undefined && val !== null) {
+          cleanData[key] = val;
+        }
+      });
+      await updateDoc(doc(db, 'bookings', id), cleanData);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `bookings/${id}`);
     }
@@ -242,7 +293,42 @@ export default function App() {
 
   const handleAssignRiders = async (bookingId: string, riderIds: string[]) => {
     try {
+      let currentBooking = bookings.find((b) => b.id === bookingId);
+      if (!currentBooking) {
+        const docSnap = await getDoc(doc(db, 'bookings', bookingId));
+        if (docSnap.exists()) {
+          currentBooking = docSnap.data() as Booking;
+        }
+      }
+
+      const previouslyAssigned = currentBooking && Array.isArray(currentBooking.assignedRiders)
+        ? currentBooking.assignedRiders
+        : [];
+
       await updateDoc(doc(db, 'bookings', bookingId), { assignedRiders: riderIds });
+
+      // Find riders that were newly added
+      const newlyAssigned = riderIds.filter(id => !previouslyAssigned.includes(id));
+      
+      if (newlyAssigned.length > 0 && currentBooking) {
+        for (const riderId of newlyAssigned) {
+          const rider = riders.find(r => r.id === riderId);
+          if (rider) {
+            const notifId = `notif_${Date.now()}_${riderId}`;
+            const newNotification: AppNotification = {
+              id: notifId,
+              title: 'تم تعيينك في عرض جديد',
+              message: `لقد تم تعيينك للمشاركة في عرض الزبون ${currentBooking.customerName} في ولاية ${currentBooking.wilaya} بتاريخ ${currentBooking.date}.`,
+              type: 'rider_assignment',
+              targetUserId: riderId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+              bookingId: bookingId,
+            };
+            await setDoc(doc(db, 'notifications', notifId), newNotification);
+          }
+        }
+      }
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `bookings/${bookingId}`);
     }
@@ -253,6 +339,35 @@ export default function App() {
       await deleteDoc(doc(db, 'bookings', id));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `bookings/${id}`);
+    }
+  };
+
+  const handleMarkNotificationRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'notifications', id), { isRead: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `notifications/${id}`);
+    }
+  };
+
+  const handleClearNotifications = async () => {
+    try {
+      const userRole = session?.role || 'rider';
+      const targetRiderId = session?.role === 'rider' ? session.riderId : undefined;
+      
+      const filtered = notifications.filter((n) => {
+        if (userRole === 'admin') {
+          return !n.targetUserId || n.targetUserId === 'admin';
+        } else {
+          return n.targetUserId === targetRiderId;
+        }
+      });
+
+      await Promise.all(
+        filtered.map((n) => deleteDoc(doc(db, 'notifications', n.id)))
+      );
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'notifications');
     }
   };
 
@@ -312,6 +427,26 @@ export default function App() {
     }
   };
 
+  const handleUpdateOwnedQuantityKg = async (qty: number) => {
+    setOwnedQuantityKg(qty);
+    localStorage.setItem('gac_owned_quantity_kg', String(qty));
+    try {
+      await setDoc(doc(db, 'settings', 'app'), { ownedQuantityKg: qty }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/app');
+    }
+  };
+
+  const handleUpdateOwnedCount = async (count: number) => {
+    setOwnedCount(count);
+    localStorage.setItem('gac_owned_count', String(count));
+    try {
+      await setDoc(doc(db, 'settings', 'app'), { ownedCount: count }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/app');
+    }
+  };
+
   const handleLoginSuccess = (userSession: typeof session) => {
     setSession(userSession);
     setShowLogin(false);
@@ -326,16 +461,34 @@ export default function App() {
   // Quick booking submit
   const handleQuickBookingSubmit = (e: FormEvent) => {
     e.preventDefault();
+    setQbPhoneError('');
     if (!qbName || !qbPhone || !qbDate || !qbStartPoint || !qbEndPoint) return;
+
+    // Validate phone number (Algerian mobile format: 05, 06, or 07 followed by 8 digits, or international version +213...)
+    const cleanPhone = qbPhone.trim().replace(/[\s-]/g, '');
+    const phoneRegex = /^(05|06|07)\d{8}$/;
+    const internationalRegex = /^\+213(5|6|7)\d{8}$/;
+    
+    if (!phoneRegex.test(cleanPhone) && !internationalRegex.test(cleanPhone)) {
+      setQbPhoneError('الرجاء إدخال رقم هاتف جزائري صحيح يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام (أو صيغة +213)');
+      return;
+    }
+
+    if (qbRidersCount < 2) {
+      return;
+    }
 
     handleAddBooking({
       customerName: qbName,
-      phone: qbPhone,
+      phone: cleanPhone,
       date: qbDate,
       wilaya: qbWilaya,
       ridersCount: qbRidersCount,
       startPoint: qbStartPoint,
       endPoint: qbEndPoint,
+      createdBy: 'الإدارة',
+      quantityKg: qbQuantityKg !== '' ? Number(qbQuantityKg) : undefined,
+      count: qbCount !== '' ? Number(qbCount) : undefined,
     });
 
     // Reset fields
@@ -343,9 +496,12 @@ export default function App() {
     setQbPhone('');
     setQbDate('');
     setQbWilaya(ALGERIAN_WILAYAS[0]);
-    setQbRidersCount(10);
+    setQbRidersCount(2);
     setQbStartPoint('');
     setQbEndPoint('');
+    setQbQuantityKg('');
+    setQbCount('');
+    setQbPhoneError('');
     setShowQuickBookingModal(false);
   };
 
@@ -357,8 +513,14 @@ export default function App() {
         <RiderDashboardView
           rider={activeRider}
           bookings={bookings}
+          riders={riders}
           onLogout={handleLogout}
           appName={appName}
+          notifications={notifications}
+          onMarkNotificationRead={handleMarkNotificationRead}
+          onClearNotifications={handleClearNotifications}
+          onAddBooking={handleAddBooking}
+          onUpdateBooking={handleUpdateBooking}
         />
       );
     }
@@ -380,7 +542,7 @@ export default function App() {
   if (!session) {
     return (
       <ClientBookingView
-        onAddBooking={handleAddBooking}
+        onAddBooking={(data) => handleAddBooking({ ...data, createdBy: 'الزبون' })}
         onNavigateToLogin={() => setShowLogin(true)}
         appName={appName}
       />
@@ -420,13 +582,21 @@ export default function App() {
 
         <h1 className="text-2xl font-bold text-white font-headline tracking-wider">{appName}</h1>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center justify-center p-2 rounded-full hover:bg-white/5 text-slate-300 hover:text-white cursor-pointer transition-colors"
-          title="تسجيل الخروج"
-        >
-          <LogOut size={18} />
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell
+            notifications={notifications}
+            onMarkAsRead={handleMarkNotificationRead}
+            onClear={handleClearNotifications}
+            currentUserRole="admin"
+          />
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center p-2 rounded-full hover:bg-white/5 text-slate-300 hover:text-white cursor-pointer transition-colors"
+            title="تسجيل الخروج"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </header>
 
       {/* Desktop Sidebar Navigation (Right-pinned) */}
@@ -466,6 +636,8 @@ export default function App() {
               onUpdateBooking={handleUpdateBooking}
               onAssignRiders={handleAssignRiders}
               onDeleteBooking={handleDeleteBooking}
+              ownedQuantityKg={ownedQuantityKg}
+              ownedCount={ownedCount}
             />
           </div>
         )}
@@ -481,11 +653,25 @@ export default function App() {
         )}
 
         {activeTab === 'calendar' && (
-          <AdminCalendarView bookings={bookings} />
+          <AdminCalendarView
+            bookings={bookings}
+            riders={riders}
+            onUpdateBookingStatus={handleUpdateBookingStatus}
+            onUpdateBooking={handleUpdateBooking}
+            onAssignRiders={handleAssignRiders}
+            onDeleteBooking={handleDeleteBooking}
+          />
         )}
 
         {activeTab === 'stats' && (
-          <AdminStatsView bookings={bookings} riders={riders} />
+          <AdminStatsView
+            bookings={bookings}
+            riders={riders}
+            ownedQuantityKg={ownedQuantityKg}
+            ownedCount={ownedCount}
+            onUpdateOwnedQuantityKg={handleUpdateOwnedQuantityKg}
+            onUpdateOwnedCount={handleUpdateOwnedCount}
+          />
         )}
 
         {activeTab === 'profile' && (
@@ -498,6 +684,10 @@ export default function App() {
             onUpdateOwnerPicture={handleUpdateOwnerPicture}
             appTheme={appTheme}
             onUpdateAppTheme={setAppTheme}
+            ownedQuantityKg={ownedQuantityKg}
+            onUpdateOwnedQuantityKg={handleUpdateOwnedQuantityKg}
+            ownedCount={ownedCount}
+            onUpdateOwnedCount={handleUpdateOwnedCount}
           />
         )}
 
@@ -552,10 +742,20 @@ export default function App() {
                     type="tel"
                     required
                     placeholder="05XXXXXXXX"
-                    className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-3 py-2 rounded-xl outline-none text-xs text-white placeholder-slate-500"
+                    className={`bg-white/5 border focus:ring-1 px-3 py-2 rounded-xl outline-none text-xs text-white placeholder-slate-500 ${
+                      qbPhoneError 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/10 focus:border-indigo-500 focus:ring-indigo-500'
+                    }`}
                     value={qbPhone}
-                    onChange={(e) => setQbPhone(e.target.value)}
+                    onChange={(e) => {
+                      setQbPhone(e.target.value);
+                      if (qbPhoneError) setQbPhoneError('');
+                    }}
                   />
+                  {qbPhoneError && (
+                    <p className="text-red-400 text-[10px] mt-1 font-bold">{qbPhoneError}</p>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -587,14 +787,14 @@ export default function App() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-300">عدد الفرسان المطلوب</label>
+                  <label className="text-xs font-bold text-slate-300">عدد اللاعبين المطلوب</label>
                   <input
                     type="number"
-                    min="5"
+                    min="2"
                     required
                     className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-3 py-2 rounded-xl outline-none text-xs text-white"
                     value={qbRidersCount}
-                    onChange={(e) => setQbRidersCount(parseInt(e.target.value) || 5)}
+                    onChange={(e) => setQbRidersCount(parseInt(e.target.value) || 2)}
                   />
                 </div>
               </div>
@@ -604,7 +804,7 @@ export default function App() {
                 <input
                   type="text"
                   required
-                  placeholder="مكان تجمع الخيالة الأساسي"
+                  placeholder="مكان تجمع اللاعبين الأساسي"
                   className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500"
                   value={qbStartPoint}
                   onChange={(e) => setQbStartPoint(e.target.value)}
@@ -621,6 +821,34 @@ export default function App() {
                   value={qbEndPoint}
                   onChange={(e) => setQbEndPoint(e.target.value)}
                 />
+              </div>
+
+              {/* New Additional Quick Booking Fields */}
+              <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-indigo-300">الكمية بالكغ</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="مثال: 12"
+                    className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-2.5 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-600"
+                    value={qbQuantityKg}
+                    onChange={(e) => setQbQuantityKg(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-indigo-300">العدد</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="مثال: 3"
+                    className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-2.5 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-600"
+                    value={qbCount}
+                    onChange={(e) => setQbCount(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
               </div>
             </div>
 

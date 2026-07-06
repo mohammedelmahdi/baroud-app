@@ -18,7 +18,9 @@ import {
   UserCheck,
   User,
   Search,
-  Users
+  Users,
+  Scale,
+  Hash
 } from 'lucide-react';
 
 interface AdminBookingsViewProps {
@@ -28,6 +30,8 @@ interface AdminBookingsViewProps {
   onUpdateBooking: (id: string, updatedData: Partial<Booking>) => void;
   onAssignRiders: (bookingId: string, riderIds: string[]) => void;
   onDeleteBooking: (id: string) => void;
+  ownedQuantityKg: number;
+  ownedCount: number;
 }
 
 export default function AdminBookingsView({
@@ -36,7 +40,9 @@ export default function AdminBookingsView({
   onUpdateBookingStatus,
   onUpdateBooking,
   onAssignRiders,
-  onDeleteBooking
+  onDeleteBooking,
+  ownedQuantityKg,
+  ownedCount
 }: AdminBookingsViewProps) {
   const [activeFilter, setActiveFilter] = useState<BookingStatus | 'الكل'>('الكل');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -49,12 +55,17 @@ export default function AdminBookingsView({
   const [showEditBookingModal, setShowEditBookingModal] = useState<Booking | null>(null);
   const [editCustomerName, setEditCustomerName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editPhoneError, setEditPhoneError] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editWilaya, setEditWilaya] = useState('');
-  const [editRidersCount, setEditRidersCount] = useState(1);
+  const [editRidersCount, setEditRidersCount] = useState(2);
   const [editStartPoint, setEditStartPoint] = useState('');
   const [editEndPoint, setEditEndPoint] = useState('');
   const [editBookingStatus, setEditBookingStatus] = useState<BookingStatus>('قيد الانتظار');
+  const [editQuantityKg, setEditQuantityKg] = useState<number | ''>('');
+  const [editCount, setEditCount] = useState<number | ''>('');
+  const [editTotalPrice, setEditTotalPrice] = useState<number | ''>('');
+  const [editPaidAmount, setEditPaidAmount] = useState<number | ''>('');
 
   // Open edit modal helper
   const openEditBookingModal = (booking: Booking) => {
@@ -67,24 +78,49 @@ export default function AdminBookingsView({
     setEditStartPoint(booking.startPoint);
     setEditEndPoint(booking.endPoint);
     setEditBookingStatus(booking.status);
+    setEditQuantityKg(booking.quantityKg !== undefined ? booking.quantityKg : '');
+    setEditCount(booking.count !== undefined ? booking.count : '');
+    setEditTotalPrice(booking.totalPrice !== undefined ? booking.totalPrice : '');
+    setEditPaidAmount(booking.paidAmount !== undefined ? booking.paidAmount : '');
     setActiveMenuId(null);
   };
 
   // Save edited booking details
   const handleSaveBookingEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    setEditPhoneError('');
+
+    // Validate phone number (Algerian mobile format: 05, 06, or 07 followed by 8 digits, or international version +213...)
+    const cleanPhone = editPhone.trim().replace(/[\s-]/g, '');
+    const phoneRegex = /^(05|06|07)\d{8}$/;
+    const internationalRegex = /^\+213(5|6|7)\d{8}$/;
+    
+    if (!phoneRegex.test(cleanPhone) && !internationalRegex.test(cleanPhone)) {
+      setEditPhoneError('الرجاء إدخال رقم هاتف جزائري صحيح يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام (أو صيغة +213)');
+      return;
+    }
+
+    if (editRidersCount < 2) {
+      return;
+    }
+
     if (showEditBookingModal) {
       onUpdateBooking(showEditBookingModal.id, {
         customerName: editCustomerName,
-        phone: editPhone,
+        phone: cleanPhone,
         date: editDate,
         wilaya: editWilaya,
         ridersCount: editRidersCount,
         startPoint: editStartPoint,
         endPoint: editEndPoint,
-        status: editBookingStatus
+        status: editBookingStatus,
+        quantityKg: editQuantityKg !== '' ? Number(editQuantityKg) : undefined,
+        count: editCount !== '' ? Number(editCount) : undefined,
+        totalPrice: editTotalPrice !== '' ? Number(editTotalPrice) : undefined,
+        paidAmount: editPaidAmount !== '' ? Number(editPaidAmount) : undefined,
       });
       setShowEditBookingModal(null);
+      setEditPhoneError('');
     }
   };
 
@@ -98,6 +134,15 @@ export default function AdminBookingsView({
   const totalBookingsCount = bookings.length + 1242; // Seeded count offset
   const pendingCount = bookings.filter((b) => b.status === 'قيد الانتظار').length + 18; // Seeded offset
   const topRiderName = 'سيف الدين. ب';
+
+  // Calculate totals for confirmed/completed bookings only
+  const activeBookings = bookings.filter(b => b.status === 'مؤكد' || b.status === 'مكتمل');
+  const totalQuantity = activeBookings.reduce((sum, b) => sum + (b.quantityKg || 0), 0);
+  const totalCount = activeBookings.reduce((sum, b) => sum + (b.count || 0), 0);
+  const totalRidersNeeded = activeBookings.reduce((sum, b) => sum + (b.ridersCount || 0), 0);
+
+  const remainingQuantity = ownedQuantityKg - totalQuantity;
+  const remainingCount = ownedCount - totalCount;
 
   // Toggle dropdown menu
   const toggleMenu = (id: string, e: React.MouseEvent) => {
@@ -118,6 +163,14 @@ export default function AdminBookingsView({
     if (selectedRiderIds.includes(riderId)) {
       setSelectedRiderIds(selectedRiderIds.filter((id) => id !== riderId));
     } else {
+      const rider = riders.find((r) => r.id === riderId);
+      const isAssignedElsewhere = (bookings || []).some(
+        (b) => b.date === assigningBooking?.date && b.id !== assigningBooking?.id && b.status !== 'ملغى' && b.assignedRiders.includes(riderId)
+      );
+      const isBusy = (rider?.status === 'في مهمة') || isAssignedElsewhere;
+      if (isBusy) {
+        return;
+      }
       setSelectedRiderIds([...selectedRiderIds, riderId]);
     }
   };
@@ -136,8 +189,6 @@ export default function AdminBookingsView({
 
   return (
     <div className="space-y-8 text-right font-sans" dir="rtl">
-      
-
 
       {/* Tabs Filter Row */}
       <div className="flex flex-wrap items-center gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
@@ -189,7 +240,7 @@ export default function AdminBookingsView({
                 title="اضغط لتعديل معلومات الحجز"
               >
                 <div className="flex flex-col gap-1 w-full md:w-auto">
-                  <div className="flex items-center gap-3 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
                     <h3 className="text-lg font-bold font-headline text-white">
                       {booking.customerName}
                     </h3>
@@ -211,6 +262,10 @@ export default function AdminBookingsView({
 
                     <span className="text-xs text-purple-300 font-semibold bg-white/5 px-2 py-0.5 rounded border border-white/10">
                       {booking.ridersCount} خيّالاً
+                    </span>
+
+                    <span className="text-xs font-semibold bg-indigo-500/10 text-indigo-300 px-2.5 py-0.5 rounded border border-indigo-500/20" title="من قام بالحجز">
+                      بواسطة: {booking.createdBy || 'الزبون'}
                     </span>
                   </div>
 
@@ -241,9 +296,49 @@ export default function AdminBookingsView({
                     <p>
                       <span className="font-semibold text-indigo-300">الوصول:</span> {booking.endPoint}
                     </p>
+                    {(booking.quantityKg !== undefined || booking.count !== undefined) && (
+                      <div className="mt-1 flex flex-wrap gap-2 text-[10px] bg-slate-950/40 p-1.5 rounded-lg border border-white/5 w-fit">
+                        {booking.quantityKg !== undefined && booking.quantityKg > 0 && (
+                          <span className="text-amber-300">
+                            <strong className="text-slate-400">البارود:</strong> {booking.quantityKg} كغ
+                          </span>
+                        )}
+                        {booking.count !== undefined && booking.count > 0 && (
+                          <span className="text-emerald-300">
+                            <strong className="text-slate-400">الكبسول:</strong> {booking.count} حبة
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Financial/Billing Tracking Block */}
+                    {booking.totalPrice !== undefined && booking.totalPrice > 0 && (
+                      <div className="mt-2 text-[10px] bg-indigo-950/20 border border-indigo-500/10 p-2 rounded-xl space-y-1 w-full max-w-sm">
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>سعر الحجز: <strong className="text-white">{(booking.totalPrice).toLocaleString()} دج</strong></span>
+                          <span>المدفوع: <strong className="text-emerald-400">{(booking.paidAmount || 0).toLocaleString()} دج</strong></span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-white/5 pt-1">
+                          <span className="text-slate-400">المتبقي:</span>
+                          {((booking.totalPrice || 0) - (booking.paidAmount || 0)) <= 0 ? (
+                            <span className="bg-emerald-500/15 text-emerald-300 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                              مدفوع بالكامل
+                            </span>
+                          ) : (booking.paidAmount || 0) > 0 ? (
+                            <span className="text-amber-400 font-bold">
+                              {((booking.totalPrice || 0) - (booking.paidAmount || 0)).toLocaleString()} دج (جزئي)
+                            </span>
+                          ) : (
+                            <span className="text-red-400 font-bold">
+                              {((booking.totalPrice || 0) - (booking.paidAmount || 0)).toLocaleString()} دج (غير مدفوع)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {assignedRiderNames.length > 0 && (
                       <div className="mt-1 flex flex-wrap items-center gap-1">
-                        <span className="font-bold text-purple-300">الخيالة المعينون:</span>
+                        <span className="font-bold text-purple-300">اللاعبون المعينون:</span>
                         {assignedRiderNames.map((name, idx) => (
                           <span key={idx} className="bg-indigo-500/10 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-500/20">
                             {name}
@@ -265,7 +360,7 @@ export default function AdminBookingsView({
                       className="flex-1 md:flex-none px-5 py-2 btn-gradient rounded-full text-xs font-bold flex items-center justify-center gap-1.5 hover:opacity-95 transition-opacity active:scale-95 cursor-pointer"
                     >
                       <UserPlus size={14} />
-                      <span>تعيين الخيالة</span>
+                      <span>تعيين اللاعبين</span>
                     </button>
                   )}
 
@@ -313,7 +408,7 @@ export default function AdminBookingsView({
 
                     {/* Dropdown Options */}
                     {activeMenuId === booking.id && (
-                      <div className="absolute left-0 mt-2 w-44 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/15 z-20 py-1.5 animate-scale-up text-right">
+                      <div className="absolute left-0 bottom-full mb-2 w-44 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/15 z-30 py-1.5 animate-scale-up text-right">
                         {!isConfirmed && booking.status !== 'مؤكد' && (
                           <button
                             onClick={() => {
@@ -381,7 +476,7 @@ export default function AdminBookingsView({
           <div className="bg-slate-900/90 backdrop-blur-2xl rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/15 animate-scale-up text-right space-y-4 my-auto" dir="rtl">
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
               <h3 className="text-lg font-bold font-headline text-white">
-                تعيين خيالة لـ: {assigningBooking.customerName}
+                تعيين لاعبين لـ: {assigningBooking.customerName}
               </h3>
               <button
                 onClick={() => setAssigningBooking(null)}
@@ -426,21 +521,32 @@ export default function AdminBookingsView({
                 if (filteredRiders.length === 0) {
                   return (
                     <div className="text-center py-8 text-xs text-slate-500">
-                      لا يوجد خيالة أو باروديين يطابقون بحثك.
+                      لا يوجد لاعبون أو باروديون يطابقون بحثك.
                     </div>
                   );
                 }
 
                 return filteredRiders.map((rider) => {
                   const isSelected = selectedRiderIds.includes(rider.id);
+                  const isAssignedElsewhere = (bookings || []).some(
+                    (b) => b.date === assigningBooking.date && b.id !== assigningBooking.id && b.status !== 'ملغى' && b.assignedRiders.includes(rider.id)
+                  );
+                  const isBusy = (rider.status === 'في مهمة') || isAssignedElsewhere;
+                  const dynamicStatus = isBusy ? 'في مهمة' : 'متاح';
+                  const isClickable = isSelected || !isBusy;
                   return (
                     <div
                       key={rider.id}
-                      onClick={() => handleRiderToggle(rider.id)}
-                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-indigo-500 bg-indigo-500/10'
-                          : 'border-white/10 hover:bg-white/5'
+                      onClick={() => {
+                        if (!isClickable) return;
+                        handleRiderToggle(rider.id);
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                        !isClickable
+                          ? 'border-red-500/10 bg-red-500/5 text-slate-500 cursor-not-allowed opacity-60'
+                          : isSelected
+                          ? 'border-indigo-500 bg-indigo-500/10 cursor-pointer'
+                          : 'border-white/10 hover:bg-white/5 cursor-pointer'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -456,9 +562,11 @@ export default function AdminBookingsView({
                           <p className="font-bold text-sm text-white">{rider.name}</p>
                           <div className="flex items-center gap-2 text-xs text-slate-400">
                             <span className="bg-white/5 text-purple-300 px-1.5 rounded text-[10px] border border-white/10">
-                              {rider.type}
+                              {rider.type === 'خيال' ? 'لاعب' : 'بارود'}
                             </span>
-                            <span>• {rider.status}</span>
+                            <span className={isBusy ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>
+                              • {dynamicStatus} {rider.status === 'في مهمة' && !isAssignedElsewhere ? '(غير متاح للتعيين)' : ''}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -466,6 +574,7 @@ export default function AdminBookingsView({
                       {/* Checkbox circle indicator */}
                       <div
                         className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                          !isClickable ? 'border-red-900/40 bg-red-900/10 text-red-400' :
                           isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-white/20'
                         }`}
                       >
@@ -541,11 +650,21 @@ export default function AdminBookingsView({
                   type="tel"
                   required
                   placeholder="مثال: 0661000000"
-                  className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500 text-left"
+                  className={`bg-white/5 border focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white placeholder-slate-500 text-left ${
+                    editPhoneError 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-indigo-500'
+                  }`}
                   dir="ltr"
                   value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
+                  onChange={(e) => {
+                    setEditPhone(e.target.value);
+                    if (editPhoneError) setEditPhoneError('');
+                  }}
                 />
+                {editPhoneError && (
+                  <p className="text-red-400 text-[10px] mt-1 font-bold">{editPhoneError}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1">
@@ -584,16 +703,16 @@ export default function AdminBookingsView({
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
                   <UserPlus size={13} className="text-indigo-400" />
-                  عدد الخيالة المطلوبة
+                  عدد اللاعبين المطلوبين
                 </label>
                 <input
                   type="number"
                   required
-                  min={1}
+                  min={2}
                   max={100}
                   className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-3 py-2.5 rounded-xl outline-none text-xs text-white"
                   value={editRidersCount}
-                  onChange={(e) => setEditRidersCount(parseInt(e.target.value) || 1)}
+                  onChange={(e) => setEditRidersCount(parseInt(e.target.value) || 2)}
                 />
               </div>
 
@@ -640,6 +759,70 @@ export default function AdminBookingsView({
                   <option value="ملغى">ملغى</option>
                 </select>
               </div>
+
+              {/* Three additional editable fields */}
+              <div className="grid grid-cols-2 gap-2 sm:col-span-2 border-t border-white/5 pt-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-indigo-300">البارود (كغ)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="مثال: 12"
+                    className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-2.5 py-2 rounded-xl outline-none text-xs text-white placeholder-slate-600"
+                    value={editQuantityKg}
+                    onChange={(e) => setEditQuantityKg(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-indigo-300">الكبسول (حبة)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="مثال: 3"
+                    className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-0 px-2.5 py-2 rounded-xl outline-none text-xs text-white placeholder-slate-600"
+                    value={editCount}
+                    onChange={(e) => setEditCount(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              {/* Pricing & Billing fields */}
+              <div className="grid grid-cols-2 gap-2 sm:col-span-2 border-t border-white/5 pt-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-emerald-400">سعر الحجز الإجمالي (دج)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="مثال: 35000"
+                    className="bg-white/5 border border-white/10 focus:border-emerald-500 focus:ring-0 px-2.5 py-2 rounded-xl outline-none text-xs text-white placeholder-slate-600"
+                    value={editTotalPrice}
+                    onChange={(e) => setEditTotalPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-emerald-400">المبلغ المدفوع (دج)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="مثال: 15000"
+                    className="bg-white/5 border border-white/10 focus:border-emerald-500 focus:ring-0 px-2.5 py-2 rounded-xl outline-none text-xs text-white placeholder-slate-600"
+                    value={editPaidAmount}
+                    onChange={(e) => setEditPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              {editTotalPrice !== '' && (
+                <div className="sm:col-span-2 bg-slate-950/40 p-2.5 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                  <span className="text-slate-400 font-bold">المبلغ المتبقي:</span>
+                  <span className={`font-bold ${Number(editTotalPrice) - Number(editPaidAmount || 0) <= 0 ? 'text-emerald-400' : 'text-amber-400'}`} dir="ltr">
+                    {(Number(editTotalPrice) - Number(editPaidAmount || 0)).toLocaleString()} دج
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-3 border-t border-white/10">

@@ -12,9 +12,10 @@ interface ClientBookingViewProps {
 export default function ClientBookingView({ onAddBooking, onNavigateToLogin, appName = 'GAC' }: ClientBookingViewProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [date, setDate] = useState('');
   const [wilaya, setWilaya] = useState(ALGERIAN_WILAYAS[0]);
-  const [ridersCount, setRidersCount] = useState(5);
+  const [ridersCount, setRidersCount] = useState(2);
   const [startPoint, setStartPoint] = useState('');
   const [endPoint, setEndPoint] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -22,14 +23,30 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneError('');
+
     if (!name || !phone || !date || !startPoint || !endPoint) return;
+
+    // Validate phone number (Algerian mobile format: 05, 06, or 07 followed by 8 digits, or international version +213...)
+    const cleanPhone = phone.trim().replace(/[\s-]/g, '');
+    const phoneRegex = /^(05|06|07)\d{8}$/;
+    const internationalRegex = /^\+213(5|6|7)\d{8}$/;
+    
+    if (!phoneRegex.test(cleanPhone) && !internationalRegex.test(cleanPhone)) {
+      setPhoneError('الرجاء إدخال رقم هاتف جزائري صحيح يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام (أو صيغة +213)');
+      return;
+    }
+
+    if (ridersCount < 2) {
+      return;
+    }
 
     setSubmitting(true);
     // Simulate API delay
     setTimeout(() => {
       onAddBooking({
         customerName: name,
-        phone,
+        phone: cleanPhone,
         date,
         wilaya,
         ridersCount,
@@ -43,9 +60,10 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
       setPhone('');
       setDate('');
       setWilaya(ALGERIAN_WILAYAS[0]);
-      setRidersCount(5);
+      setRidersCount(2);
       setStartPoint('');
       setEndPoint('');
+      setPhoneError('');
     }, 1200);
   };
 
@@ -66,7 +84,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full text-sm transition-colors border border-white/10 cursor-pointer"
           >
             <LogIn size={16} className="text-indigo-400" />
-            <span>بوابة الإدارة والخيالة</span>
+            <span>بوابة الإدارة واللاعبين</span>
           </button>
         </div>
       </header>
@@ -86,7 +104,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
               أصالة البارود في حلتها الجديدة
             </h2>
             <p className="text-sm md:text-lg max-w-2xl text-slate-300 leading-relaxed font-sans">
-              نحن نربط بين التقاليد والاحترافية لتنظيم عروض الفانتازيا والخيالة بأعلى المعايير التنظيمية والإدارية لتخليد تراثنا العريق.
+              نحن نربط بين التقاليد والاحترافية لتنظيم عروض الفانتازيا واللاعبين بأعلى المعايير التنظيمية والإدارية لتخليد تراثنا العريق.
             </p>
           </div>
         </section>
@@ -130,7 +148,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
                   <div>
                     <h4 className="font-bold text-white text-sm">تنفيذ العرض الفني الأصيل</h4>
                     <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                      سيحضر فريق الخيالة والبارود المعتمد في المكان المحدد لتقديم لوحة تراثية مهيبة تأسر القلوب وتشرّف مناسبتكم.
+                      سيحضر فريق اللاعبين والبارود المعتمد في المكان المحدد لتقديم لوحة تراثية مهيبة تأسر القلوب وتشرّف مناسبتكم.
                     </p>
                   </div>
                 </li>
@@ -164,7 +182,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
                   <span className="text-xl font-headline">تم إرسال طلبك بنجاح!</span>
                 </div>
                 <p className="text-sm text-emerald-400 mt-2">
-                  لقد سجلنا تفاصيل الحجز، وسيتواصل معك مدير الجمعية في أقرب وقت لتنسيق الخيالة وتأكيد العرض.
+                  لقد سجلنا تفاصيل الحجز، وسيتواصل معك مدير الجمعية في أقرب وقت لتنسيق اللاعبين وتأكيد العرض.
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
@@ -201,12 +219,22 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
                     </label>
                     <input
                       type="tel"
-                      className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl transition-all outline-none text-sm text-white"
+                      className={`bg-white/5 border focus:ring-1 px-4 py-3 rounded-xl transition-all outline-none text-sm text-white ${
+                        phoneError 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-white/10 focus:border-indigo-500 focus:ring-indigo-500'
+                      }`}
                       placeholder="05XXXXXXXX"
                       required
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (phoneError) setPhoneError('');
+                      }}
                     />
+                    {phoneError && (
+                      <p className="text-red-400 text-xs mt-1 font-bold">{phoneError}</p>
+                    )}
                   </div>
 
                   {/* Event Date */}
@@ -247,17 +275,17 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
                       <Users size={14} className="text-indigo-400" />
-                      عدد الخيالة المطلوب
+                      عدد اللاعبين المطلوب
                     </label>
                     <input
                       type="number"
-                      min="5"
+                      min="2"
                       max="100"
                       className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl transition-all outline-none text-sm text-white"
-                      placeholder="أقل عدد هو ٥ خيالة"
+                      placeholder="أقل عدد هو ٢ لاعبين"
                       required
                       value={ridersCount}
-                      onChange={(e) => setRidersCount(parseInt(e.target.value) || 5)}
+                      onChange={(e) => setRidersCount(parseInt(e.target.value) || 2)}
                     />
                   </div>
 
@@ -282,7 +310,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
                     <input
                       type="text"
                       className="bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl transition-all outline-none text-sm text-white"
-                      placeholder="مكان وصول الخيالة والبارود النهائي"
+                      placeholder="مكان وصول اللاعبين والبارود النهائي"
                       required
                       value={endPoint}
                       onChange={(e) => setEndPoint(e.target.value)}
@@ -308,7 +336,7 @@ export default function ClientBookingView({ onAddBooking, onNavigateToLogin, app
           <div className="glass-card p-6 text-center border border-white/10 hover:-translate-y-1 transition-transform">
             <span className="text-indigo-400 text-3xl mb-2 flex justify-center"><Users size={32} /></span>
             <p className="text-2xl font-bold text-white font-headline">+١٥٠</p>
-            <p className="text-xs text-slate-400 mt-1 font-medium">خيال وبارودي محترف</p>
+            <p className="text-xs text-slate-400 mt-1 font-medium">لاعب وبارودي محترف</p>
           </div>
           
           <div className="glass-card p-6 text-center border border-white/10 hover:-translate-y-1 transition-transform">

@@ -25,39 +25,48 @@ service cloud.firestore {
 
     // Entity validations
     function isValidRider(data) {
-      return data.keys().hasAll(['id', 'name', 'type', 'username', 'status', 'image'])
-        && data.keys().size() <= 8
-        && data.id is string && data.id.size() <= 128
-        && data.name is string && data.name.size() <= 100
-        && data.type is string && (data.type == 'بارود' || data.type == 'خيال')
-        && data.username is string && data.username.size() <= 100
-        && data.status is string && (data.status == 'متاح' || data.status == 'في مهمة')
-        && data.image is string && data.image.size() <= 1000000
-        && (!data.keys().hasAny(['password']) || (data.password is string && data.password.size() <= 100));
+      return ('id' in data) && (data.id is string) && (data.id.size() <= 128)
+        && ('name' in data) && (data.name is string) && (data.name.size() <= 100)
+        && ('type' in data) && (data.type is string) && (data.type == 'بارود' || data.type == 'خيال')
+        && ('username' in data) && (data.username is string) && (data.username.size() <= 100)
+        && ('status' in data) && (data.status is string) && (data.status == 'متاح' || data.status == 'في مهمة')
+        && ('image' in data) && (data.image is string) && (data.image.size() <= 1000000)
+        && (!('password' in data) || (data.password is string && data.password.size() <= 100));
     }
 
     function isValidBooking(data) {
-      return data.keys().hasAll(['id', 'customerName', 'phone', 'date', 'wilaya', 'ridersCount', 'startPoint', 'endPoint', 'status', 'assignedRiders', 'createdAt'])
-        && data.keys().size() == 11
-        && data.id is string && data.id.size() <= 128
-        && data.customerName is string && data.customerName.size() <= 200
-        && data.phone is string && data.phone.size() <= 50
-        && data.date is string && data.date.size() <= 50
-        && data.wilaya is string && data.wilaya.size() <= 100
-        && data.ridersCount is int
-        && data.startPoint is string && data.startPoint.size() <= 500
-        && data.endPoint is string && data.endPoint.size() <= 500
-        && data.status is string && (data.status == 'قيد الانتظار' || data.status == 'مؤكد' || data.status == 'مكتمل' || data.status == 'ملغى')
-        && data.assignedRiders is list
-        && data.createdAt is string && data.createdAt.size() <= 100;
+      return ('id' in data) && (data.id is string) && (data.id.size() <= 128)
+        && ('customerName' in data) && (data.customerName is string) && (data.customerName.size() <= 200)
+        && ('phone' in data) && (data.phone is string) && (data.phone.size() <= 50)
+        && ('date' in data) && (data.date is string) && (data.date.size() <= 50)
+        && ('wilaya' in data) && (data.wilaya is string) && (data.wilaya.size() <= 100)
+        && ('ridersCount' in data) && (data.ridersCount is int || data.ridersCount is float)
+        && ('startPoint' in data) && (data.startPoint is string) && (data.startPoint.size() <= 500)
+        && ('endPoint' in data) && (data.endPoint is string) && (data.endPoint.size() <= 500)
+        && ('status' in data) && (data.status is string) && (data.status == 'قيد الانتظار' || data.status == 'مؤكد' || data.status == 'مكتمل' || data.status == 'ملغى')
+        && ('assignedRiders' in data) && (data.assignedRiders is list)
+        && ('createdAt' in data) && (data.createdAt is string) && (data.createdAt.size() <= 100)
+        && (!('createdBy' in data) || (data.createdBy is string && data.createdBy.size() <= 200))
+        && (!('quantityKg' in data) || (data.quantityKg is int || data.quantityKg is float))
+        && (!('count' in data) || (data.count is int || data.count is float))
+        && (!('riderPrice' in data) || (data.riderPrice is int || data.riderPrice is float));
     }
 
     function isValidSettings(data) {
-      return data.keys().hasAll(['ownerName', 'appName', 'ownerPicture'])
-        && data.keys().size() == 3
-        && data.ownerName is string && data.ownerName.size() <= 100
-        && data.appName is string && data.appName.size() <= 100
-        && data.ownerPicture is string && data.ownerPicture.size() <= 1000000;
+      return ('ownerName' in data) && (data.ownerName is string) && (data.ownerName.size() <= 100)
+        && ('appName' in data) && (data.appName is string) && (data.appName.size() <= 100)
+        && ('ownerPicture' in data) && (data.ownerPicture is string) && (data.ownerPicture.size() <= 1000000);
+    }
+
+    function isValidNotification(data) {
+      return ('id' in data) && (data.id is string) && (data.id.size() <= 128)
+        && ('title' in data) && (data.title is string) && (data.title.size() <= 200)
+        && ('message' in data) && (data.message is string) && (data.message.size() <= 1000)
+        && ('type' in data) && (data.type is string) && (data.type == 'new_booking' || data.type == 'rider_assignment' || data.type == 'general')
+        && ('isRead' in data) && (data.isRead is bool)
+        && ('createdAt' in data) && (data.createdAt is string) && (data.createdAt.size() <= 100)
+        && (!('targetUserId' in data) || (data.targetUserId is string && data.targetUserId.size() <= 128))
+        && (!('bookingId' in data) || (data.bookingId is string && data.bookingId.size() <= 128));
     }
 
     // Collection matches
@@ -75,6 +84,11 @@ service cloud.firestore {
     match /settings/{settingsId} {
       allow read: if true;
       allow write: if true;
+    }
+
+    match /notifications/{notificationId} {
+      allow create: if isValidNotification(request.resource.data);
+      allow read, update, delete: if true;
     }
   }
 }

@@ -25,6 +25,11 @@ export interface Booking {
   status: BookingStatus;
   assignedRiders: string[]; // List of Rider IDs assigned to this booking
   createdAt: string;
+  createdBy?: string;
+  quantityKg?: number;
+  count?: number;
+  totalPrice?: number;
+  paidAmount?: number;
 }
 
 export type UserRole = 'admin' | 'rider';
@@ -39,3 +44,17 @@ export interface User {
 }
 
 export type NavigationTab = 'bookings' | 'riders' | 'calendar' | 'stats' | 'client-booking' | 'profile';
+
+export type NotificationType = 'new_booking' | 'rider_assignment' | 'general';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  targetUserId?: string; // Links to Rider.id, or undefined for admin
+  isRead: boolean;
+  createdAt: string;
+  bookingId?: string;
+}
+

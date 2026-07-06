@@ -145,7 +145,21 @@ export default function AdminRidersView({
 
   // Stats Counters
   const totalRiders = riders.length;
-  const availableRiders = riders.filter((r) => r.status === 'متاح').length;
+
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
+
+  const activeDate = filterDate || todayStr;
+
+  const availableRiders = riders.filter((r) => {
+    const isAssigned = (bookings || []).some(
+      (b) => b.date === activeDate && b.status !== 'ملغى' && b.assignedRiders.includes(r.id)
+    );
+    return !isAssigned;
+  }).length;
 
   return (
     <div className="space-y-8 text-right font-sans" dir="rtl">
@@ -153,7 +167,7 @@ export default function AdminRidersView({
       {/* Header and Add action button */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
         <div>
-          <h1 className="text-2xl font-bold font-headline text-white">إدارة الباردية والخيالة</h1>
+          <h1 className="text-2xl font-bold font-headline text-white">إدارة الباردية واللاعبين</h1>
           <p className="text-xs text-slate-400 font-medium">إدارة وتتبع المؤدين المشاركين وعقود عروض الفانتازيا والبارود.</p>
         </div>
         <button
@@ -168,12 +182,12 @@ export default function AdminRidersView({
       {/* Stats Overview */}
       <section className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="glass-card p-4 sm:p-6 flex flex-col gap-1.5 hover:scale-[1.01] transition-transform">
-          <span className="text-xs font-semibold text-slate-400">إجمالي الخيالة المسجلين</span>
+          <span className="text-xs font-semibold text-slate-400">إجمالي اللاعبين المسجلين</span>
           <span className="text-2xl sm:text-3xl font-bold text-white font-headline">{totalRiders}</span>
         </div>
         
         <div className="glass-card p-4 sm:p-6 flex flex-col gap-1.5 hover:scale-[1.01] transition-transform">
-          <span className="text-xs font-semibold text-slate-400">الفرسان المتاحون حالياً</span>
+          <span className="text-xs font-semibold text-slate-400">اللاعبون المتاحون حالياً</span>
           <span className="text-2xl sm:text-3xl font-bold text-indigo-300 font-headline">{availableRiders}</span>
         </div>
         
@@ -194,7 +208,7 @@ export default function AdminRidersView({
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
               تصفية حالة اللاعبين باليوم والتواريخ
             </h3>
-            <p className="text-[11px] text-slate-400">حدد تاريخاً معيناً لمعرفة الخيالة المتاحين أو المعينين لعروض في ذلك اليوم</p>
+            <p className="text-[11px] text-slate-400">حدد تاريخاً معيناً لمعرفة اللاعبين المتاحين أو المعينين لعروض في ذلك اليوم</p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
             <div className="relative">
@@ -336,7 +350,7 @@ export default function AdminRidersView({
                     <div>
                       <h3 className="text-base font-bold text-white font-headline leading-tight">{rider.name}</h3>
                       <span className="text-[10px] font-bold text-purple-300 bg-white/5 px-2 py-0.5 rounded border border-white/10 inline-block mt-1">
-                        {rider.type}
+                        {rider.type === 'خيال' ? 'لاعب' : 'بارود'}
                       </span>
                     </div>
                   </div>
@@ -358,40 +372,37 @@ export default function AdminRidersView({
                   </div>
                 </div>
 
-                {/* Date-specific Status Badges inside the card */}
-                {filterDate && (
-                  <div className="mt-1 flex items-center gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
-                    {(() => {
-                      const bookingsOnDate = (bookings || []).filter(
-                        (b) => b.date === filterDate && b.status !== 'ملغى'
-                      );
-                      const assignedBooking = bookingsOnDate.find((b) =>
-                        b.assignedRiders.includes(rider.id)
-                      );
+                {/* Dynamic Status Badges inside the card */}
+                {(() => {
+                  const targetDate = filterDate || todayStr;
+                  const bookingsOnDate = (bookings || []).filter(
+                    (b) => b.date === targetDate && b.status !== 'ملغى'
+                  );
+                  const assignedBooking = bookingsOnDate.find((b) =>
+                    b.assignedRiders.includes(rider.id)
+                  );
 
-                      if (assignedBooking) {
-                        return (
-                          <div className="flex flex-col gap-1 w-full bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-right">
-                            <span className="text-amber-400 font-bold text-xs flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                              تم تعيينه في هذا اليوم لعرض:
-                            </span>
-                            <span className="text-[11px] text-slate-200 font-medium">
-                              {assignedBooking.customerName} ({assignedBooking.wilaya})
-                            </span>
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <div className="flex items-center gap-1.5 w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 text-right text-emerald-300 font-bold text-xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            متاح وجاهز للمشاركة في هذا اليوم
-                          </div>
-                        );
-                      }
-                    })()}
-                  </div>
-                )}
+                  return (
+                    <div className="mt-1 flex items-center gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
+                      {assignedBooking ? (
+                        <div className="flex flex-col gap-1 w-full bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-right">
+                          <span className="text-amber-400 font-bold text-xs flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            {filterDate ? 'تم تعيينه في هذا اليوم لعرض:' : 'في مهمة اليوم لعرض:'}
+                          </span>
+                          <span className="text-[11px] text-slate-200 font-medium">
+                            {assignedBooking.customerName} ({assignedBooking.wilaya})
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 text-right text-emerald-300 font-bold text-xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                          {filterDate ? 'متاح وجاهز للمشاركة في هذا اليوم' : 'متاح وجاهز للمشاركة اليوم'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Edit/Delete Row */}
                 <div className="flex justify-end gap-2 pt-2 border-t border-white/5 mt-auto" onClick={(e) => e.stopPropagation()}>
@@ -430,7 +441,7 @@ export default function AdminRidersView({
             <Plus size={24} className="text-indigo-400" />
           </div>
           <span className="text-sm font-bold text-indigo-300">اضافة لاعب جديد</span>
-          <p className="text-[10px] text-slate-400 max-w-[200px] text-center">قم بتسجيل لاعب جديد وإنشاء بيانات دخول بورتال الخيالة له</p>
+          <p className="text-[10px] text-slate-400 max-w-[200px] text-center">قم بتسجيل لاعب جديد وإنشاء بيانات دخول بوابة اللاعبين له</p>
         </div>
       </section>
 
@@ -457,7 +468,7 @@ export default function AdminRidersView({
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
                   <User size={13} className="text-indigo-400" />
-                  الاسم الكامل للفارس
+                  الاسم الكامل للاعب
                 </label>
                 <input
                   type="text"
@@ -476,7 +487,7 @@ export default function AdminRidersView({
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as RiderType)}
                 >
-                  <option value="خيال">خيّال عادِي (فروسية)</option>
+                  <option value="خيال">لاعب عادِي (فروسية)</option>
                   <option value="بارود">بارودي متمرس (سلاح)</option>
                 </select>
               </div>
@@ -604,7 +615,7 @@ export default function AdminRidersView({
                   value={editType}
                   onChange={(e) => setEditType(e.target.value as RiderType)}
                 >
-                  <option value="خيال">خيّال عادِي (فروسية)</option>
+                  <option value="خيال">لاعب عادِي (فروسية)</option>
                   <option value="بارود">بارودي متمرس (سلاح)</option>
                 </select>
               </div>

@@ -69,7 +69,9 @@ export const initialBookings: Booking[] = [
     endPoint: 'ساحة العروض الكبرى، تيبازة',
     status: 'قيد الانتظار',
     assignedRiders: [],
-    createdAt: '2024-06-25T10:00:00Z'
+    createdAt: '2024-06-25T10:00:00Z',
+    totalPrice: 45000,
+    paidAmount: 15000
   },
   {
     id: 'booking_2',
@@ -82,7 +84,9 @@ export const initialBookings: Booking[] = [
     endPoint: 'الميدان الأثري للفنتازيا، مستغانم',
     status: 'مؤكد',
     assignedRiders: ['rider_1', 'rider_3'],
-    createdAt: '2024-06-24T08:30:00Z'
+    createdAt: '2024-06-24T08:30:00Z',
+    totalPrice: 85000,
+    paidAmount: 85000
   },
   {
     id: 'booking_3',
@@ -95,7 +99,9 @@ export const initialBookings: Booking[] = [
     endPoint: 'هضبة لالة ستي، تلمسان',
     status: 'مكتمل',
     assignedRiders: ['rider_2', 'rider_6'],
-    createdAt: '2024-06-20T14:15:00Z'
+    createdAt: '2024-06-20T14:15:00Z',
+    totalPrice: 35000,
+    paidAmount: 35000
   },
   {
     id: 'booking_4',
@@ -108,7 +114,9 @@ export const initialBookings: Booking[] = [
     endPoint: 'دالي ابراهيم',
     status: 'مؤكد',
     assignedRiders: ['rider_1', 'rider_4'],
-    createdAt: '2024-06-10T09:00:00Z'
+    createdAt: '2024-06-10T09:00:00Z',
+    totalPrice: 28000,
+    paidAmount: 0
   },
   {
     id: 'booking_5',
@@ -121,7 +129,9 @@ export const initialBookings: Booking[] = [
     endPoint: 'زرالدة',
     status: 'مؤكد',
     assignedRiders: ['rider_2', 'rider_3'],
-    createdAt: '2024-06-11T16:45:00Z'
+    createdAt: '2024-06-11T16:45:00Z',
+    totalPrice: 38000,
+    paidAmount: 20000
   },
   {
     id: 'booking_6',
@@ -134,7 +144,9 @@ export const initialBookings: Booking[] = [
     endPoint: 'بوفاريك',
     status: 'قيد الانتظار',
     assignedRiders: [],
-    createdAt: '2024-06-12T11:20:00Z'
+    createdAt: '2024-06-12T11:20:00Z',
+    totalPrice: 60000,
+    paidAmount: 0
   }
 ];
 

@@ -87,6 +87,10 @@
         "createdAt": {
           "type": "string",
           "description": "Timestamp indicating the creation of the record"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Indicates who created the booking (e.g. الزبون, الإدارة, or Name of Rider)"
         }
       },
       "required": [
@@ -122,6 +126,47 @@
         }
       },
       "required": ["ownerName", "appName", "ownerPicture"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or user notifications about bookings and assignments",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier of the notification"
+        },
+        "title": {
+          "type": "string",
+          "description": "Short heading of the notification"
+        },
+        "message": {
+          "type": "string",
+          "description": "Body message describing the action"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["new_booking", "rider_assignment", "general"],
+          "description": "Type classification of notifications"
+        },
+        "targetUserId": {
+          "type": "string",
+          "description": "Rider's ID if user-targeted, or 'admin' or empty"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates whether the notification has been read"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the notification was fired"
+        },
+        "bookingId": {
+          "type": "string",
+          "description": "Optional booking ID reference"
+        }
+      },
+      "required": ["id", "title", "message", "type", "isRead", "createdAt"]
     }
   },
   "firestore": {
@@ -136,6 +181,10 @@
     "settings": {
       "schema": "Settings",
       "description": "Persistent general configurations for the application branding"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Collection of notifications for admins and riders"
     }
   }
 }

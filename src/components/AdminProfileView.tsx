@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { User, Palette, Check, ShieldAlert, Upload, Sparkles } from 'lucide-react';
+import { User, Palette, Check, ShieldAlert, Upload, Sparkles, Scale, Hash } from 'lucide-react';
 import { compressImage } from '../utils/imageCompressor';
 
 interface AdminProfileViewProps {
@@ -11,6 +11,10 @@ interface AdminProfileViewProps {
   onUpdateOwnerPicture: (picUrl: string) => void;
   appTheme: 'cosmic' | 'royal';
   onUpdateAppTheme: (theme: 'cosmic' | 'royal') => void;
+  ownedQuantityKg: number;
+  onUpdateOwnedQuantityKg: (qty: number) => void;
+  ownedCount: number;
+  onUpdateOwnedCount: (count: number) => void;
 }
 
 const THEMES = [
@@ -42,10 +46,16 @@ export default function AdminProfileView({
   ownerPicture,
   onUpdateOwnerPicture,
   appTheme,
-  onUpdateAppTheme
+  onUpdateAppTheme,
+  ownedQuantityKg,
+  onUpdateOwnedQuantityKg,
+  ownedCount,
+  onUpdateOwnedCount
 }: AdminProfileViewProps) {
   const [nameInput, setNameInput] = useState(ownerName);
   const [appInput, setAppInput] = useState(appName);
+  const [qtyInput, setQtyInput] = useState<number | ''>(ownedQuantityKg);
+  const [countInput, setCountInput] = useState<number | ''>(ownedCount);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -60,6 +70,14 @@ export default function AdminProfileView({
     setAppInput(appName);
   }, [appName]);
 
+  React.useEffect(() => {
+    setQtyInput(ownedQuantityKg);
+  }, [ownedQuantityKg]);
+
+  React.useEffect(() => {
+    setCountInput(ownedCount);
+  }, [ownedCount]);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setShowSuccessToast(true);
@@ -71,6 +89,13 @@ export default function AdminProfileView({
     onUpdateOwnerName(nameInput);
     onUpdateAppName(appInput);
     triggerToast('تم حفظ تعديلات معلومات الهوية والجمعية بنجاح!');
+  };
+
+  const handleSaveInventory = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateOwnedQuantityKg(qtyInput === '' ? 0 : Number(qtyInput));
+    onUpdateOwnedCount(countInput === '' ? 0 : Number(countInput));
+    triggerToast('تم تحديث كميات المخزون المتوفر بنجاح!');
   };
 
   // Handle local image file upload, compress, and update
@@ -179,6 +204,63 @@ export default function AdminProfileView({
                 className="px-6 py-2.5 btn-gradient text-white font-bold text-xs rounded-full cursor-pointer transition-opacity"
               >
                 حفظ التعديلات الأساسية
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Section 1.5: Inventory Management (What the Admin owns) */}
+        <div className="glass-card p-6 border border-white/10 space-y-6">
+          <h3 className="text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-3">
+            <Scale size={18} className="text-indigo-400" />
+            إدارة المخزون والكبسول (ما تملكه الجمعية)
+          </h3>
+          <p className="text-xs text-slate-400 font-medium">
+            أدخل إجمالي كمية البارود والكبسول المتوفر الذي تملكه الجمعية حالياً لتتبع الكميات المتبقية والصافية تلقائياً بعد خصم متطلبات العروض النشطة.
+          </p>
+
+          <form onSubmit={handleSaveInventory} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">إجمالي كمية البارود المتوفرة (كغ)</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="مثال: 150.5"
+                    className="w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-500 text-left"
+                    dir="ltr"
+                    value={qtyInput}
+                    onChange={(e) => setQtyInput(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">كغ</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-300">إجمالي كمية الكبسول المتوفرة (حبة/وحدة)</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="مثال: 100"
+                    className="w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 px-4 py-3 rounded-xl outline-none text-xs text-white placeholder-slate-500 text-left"
+                    dir="ltr"
+                    value={countInput}
+                    onChange={(e) => setCountInput(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">حبة</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                className="px-6 py-2.5 btn-gradient text-white font-bold text-xs rounded-full cursor-pointer transition-opacity"
+              >
+                تحديث كميات المخزون المتوفر
               </button>
             </div>
           </form>
