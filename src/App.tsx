@@ -91,24 +91,13 @@ export default function App() {
     const ridersCol = collection(db, 'riders');
     const unsubscribe = onSnapshot(
       ridersCol,
-      async (snapshot) => {
-        if (snapshot.empty) {
-          console.log('Seeding initial riders...');
-          try {
-            for (const r of initialRiders) {
-              await setDoc(doc(db, 'riders', r.id), r);
-            }
-          } catch (err) {
-            handleFirestoreError(err, OperationType.WRITE, 'riders-seeding');
-          }
-        } else {
-          const list: Rider[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as Rider);
-          });
-          setRiders(list);
-          localStorage.setItem('gac_riders', JSON.stringify(list));
-        }
+      (snapshot) => {
+        const list: Rider[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as Rider);
+        });
+        setRiders(list);
+        localStorage.setItem('gac_riders', JSON.stringify(list));
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'riders');
@@ -121,25 +110,14 @@ export default function App() {
     const bookingsCol = collection(db, 'bookings');
     const unsubscribe = onSnapshot(
       bookingsCol,
-      async (snapshot) => {
-        if (snapshot.empty) {
-          console.log('Seeding initial bookings...');
-          try {
-            for (const b of initialBookings) {
-              await setDoc(doc(db, 'bookings', b.id), b);
-            }
-          } catch (err) {
-            handleFirestoreError(err, OperationType.WRITE, 'bookings-seeding');
-          }
-        } else {
-          const list: Booking[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as Booking);
-          });
-          list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-          setBookings(list);
-          localStorage.setItem('gac_bookings', JSON.stringify(list));
-        }
+      (snapshot) => {
+        const list: Booking[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as Booking);
+        });
+        list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        setBookings(list);
+        localStorage.setItem('gac_bookings', JSON.stringify(list));
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'bookings');
@@ -181,7 +159,19 @@ export default function App() {
               ownerPicture: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQr_DnDfoEvvlXDUFBo-0YHL31Z6qrYy0LcR9z1oThmVqrgOJzb-hfZ23dGNxpFfqlv8AEn4bygqeBVGu8e6fg5clr9A1oojBMWUB9efVDasB9D30GiT_NdICG54dZdoufsH6OoGWXiNVt458HFxsyYxFr-i-8hvsT7saTwjyRQWBPYxNN3l-yVXtAja4p3fmYIPPW4ZIDksWW9FwUffHzZjia-eZWaGyIdqE84MR06s8EOm6ekfJN1Eyl9FoT9-d2CFoYrZRn3hM',
               ownedQuantityKg: 100,
               ownedCount: 50,
+              hasSeededData: true,
             });
+
+            // Also seed initial riders and bookings on the first run
+            console.log('Seeding initial riders...');
+            for (const r of initialRiders) {
+              await setDoc(doc(db, 'riders', r.id), r);
+            }
+
+            console.log('Seeding initial bookings...');
+            for (const b of initialBookings) {
+              await setDoc(doc(db, 'bookings', b.id), b);
+            }
           } catch (err) {
             handleFirestoreError(err, OperationType.WRITE, 'settings/app');
           }
@@ -206,6 +196,16 @@ export default function App() {
           if (data.ownedCount !== undefined) {
             setOwnedCount(data.ownedCount);
             localStorage.setItem('gac_owned_count', String(data.ownedCount));
+          }
+
+          // If settings exist but do not have the hasSeededData flag, write it
+          // to ensure we never run the conditional empty seeding check.
+          if (!data.hasSeededData) {
+            try {
+              await setDoc(settingsDoc, { hasSeededData: true }, { merge: true });
+            } catch (err) {
+              console.error('Failed to set hasSeededData flag:', err);
+            }
           }
         }
       },
