@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Booking, Rider, BookingStatus } from '../types';
 import { ALGERIAN_WILAYAS } from '../data/seedData';
+import PrintMissionOrder from './PrintMissionOrder';
 import {
   FileText,
   Clock,
@@ -50,6 +51,7 @@ export default function AdminBookingsView({
   const [selectedRiderIds, setSelectedRiderIds] = useState<string[]>([]);
   const [riderSearchQuery, setRiderSearchQuery] = useState('');
   const [deletingBooking, setDeletingBooking] = useState<Booking | null>(null);
+  const [printingBooking, setPrintingBooking] = useState<Booking | null>(null);
 
   // Editing Bookings States
   const [showEditBookingModal, setShowEditBookingModal] = useState<Booking | null>(null);
@@ -373,6 +375,14 @@ export default function AdminBookingsView({
                         <Edit2 size={13} />
                         <span>تعديل الفريق</span>
                       </button>
+
+                      <button
+                        onClick={() => setPrintingBooking(booking)}
+                        className="flex-1 md:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
+                      >
+                        <FileText size={13} />
+                        <span>أمر المهمة</span>
+                      </button>
                       
                       <button
                         onClick={() => onUpdateBookingStatus(booking.id, 'مكتمل')}
@@ -385,10 +395,20 @@ export default function AdminBookingsView({
                   )}
 
                   {isCompleted && (
-                    <button className="flex-1 md:flex-none px-5 py-2 bg-white/5 text-slate-500 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-default border border-white/5">
-                      <CheckCircle2 size={14} />
-                      <span>تم التنفيذ واكتمل</span>
-                    </button>
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <button className="flex-1 md:flex-none px-5 py-2 bg-white/5 text-slate-500 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-default border border-white/5">
+                        <CheckCircle2 size={14} />
+                        <span>تم التنفيذ واكتمل</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setPrintingBooking(booking)}
+                        className="flex-1 md:flex-none px-4 py-2 bg-white/5 hover:bg-white/10 text-indigo-300 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-white/10"
+                      >
+                        <FileText size={13} />
+                        <span>أمر المهمة</span>
+                      </button>
+                    </div>
                   )}
 
                   {isCancelled && (
@@ -447,6 +467,17 @@ export default function AdminBookingsView({
                             <span>إلغاء الحجز</span>
                           </button>
                         )}
+
+                        <button
+                          onClick={() => {
+                            setPrintingBooking(booking);
+                            setActiveMenuId(null);
+                          }}
+                          className="w-full px-4 py-2 text-xs font-semibold text-indigo-300 hover:bg-white/5 text-right flex items-center gap-2 cursor-pointer"
+                        >
+                          <FileText size={14} />
+                          <span>أمر القيام بمهمة</span>
+                        </button>
 
                         <div className="h-[1px] bg-white/5 my-1" />
 
@@ -876,6 +907,15 @@ export default function AdminBookingsView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Print Mission Order Modal Dialog */}
+      {printingBooking && (
+        <PrintMissionOrder
+          booking={printingBooking}
+          riders={riders}
+          onClose={() => setPrintingBooking(null)}
+        />
       )}
     </div>
   );
