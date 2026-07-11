@@ -353,7 +353,7 @@ export default function AdminBookingsView({
 
                 {/* Right hand Action buttons */}
                 <div 
-                  className="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 border-white/5 pt-3 md:pt-0 shrink-0"
+                  className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 border-white/5 pt-3 md:pt-0 shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {isPending && (
@@ -367,10 +367,10 @@ export default function AdminBookingsView({
                   )}
 
                   {isConfirmed && (
-                    <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto">
                       <button
                         onClick={() => openAssignModal(booking)}
-                        className="flex-1 md:flex-none px-4 py-2 bg-white/5 hover:bg-white/10 text-indigo-300 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-white/10"
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-indigo-300 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-white/10"
                       >
                         <Edit2 size={13} />
                         <span>تعديل الفريق</span>
@@ -378,7 +378,7 @@ export default function AdminBookingsView({
 
                       <button
                         onClick={() => setPrintingBooking(booking)}
-                        className="flex-1 md:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
                       >
                         <FileText size={13} />
                         <span>أمر المهمة</span>
@@ -386,7 +386,7 @@ export default function AdminBookingsView({
                       
                       <button
                         onClick={() => onUpdateBookingStatus(booking.id, 'مكتمل')}
-                        className="flex-1 md:flex-none px-4 py-2 btn-gradient rounded-full text-xs font-bold flex items-center justify-center gap-1.5 hover:opacity-95 transition-all active:scale-95 cursor-pointer"
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 btn-gradient rounded-full text-xs font-bold flex items-center justify-center gap-1.5 hover:opacity-95 transition-all active:scale-95 cursor-pointer"
                       >
                         <CheckCircle2 size={13} />
                         <span>تم التنفيذ</span>
@@ -395,15 +395,15 @@ export default function AdminBookingsView({
                   )}
 
                   {isCompleted && (
-                    <div className="flex gap-2 w-full md:w-auto">
-                      <button className="flex-1 md:flex-none px-5 py-2 bg-white/5 text-slate-500 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-default border border-white/5">
+                    <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto">
+                      <button className="flex-1 sm:flex-none px-4 sm:px-5 py-2 bg-white/5 text-slate-500 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-default border border-white/5">
                         <CheckCircle2 size={14} />
                         <span>تم التنفيذ واكتمل</span>
                       </button>
                       
                       <button
                         onClick={() => setPrintingBooking(booking)}
-                        className="flex-1 md:flex-none px-4 py-2 bg-white/5 hover:bg-white/10 text-indigo-300 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-white/10"
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-indigo-300 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-white/10"
                       >
                         <FileText size={13} />
                         <span>أمر المهمة</span>

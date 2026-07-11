@@ -88,34 +88,33 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
       {/* Dynamic styles injected specifically for this component to control printing layout perfectly */}
       <style>{`
         @media print {
-          /* Hide everything except the print-area-root */
+          /* Hide everything by default using visibility */
           body * {
-            visibility: hidden;
-            background-color: white !important;
-            color: black !important;
+            visibility: hidden !important;
           }
+          /* Show ONLY the print area root and its descendants */
           .print-area-root, .print-area-root * {
-            visibility: visible;
+            visibility: visible !important;
           }
+          /* Absolute layout for printing the sheet perfectly */
           .print-area-root {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100% !important;
-            max-width: 100% !important;
-            height: auto !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 21cm !important;
+            min-height: 29.7cm !important;
+            padding: 1.5cm !important;
+            margin: 0 !important;
             background: white !important;
             color: black !important;
-            padding: 0 !important;
-            margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
-            font-size: 14px !important;
-            line-height: 1.6 !important;
           }
+          /* Ensure we do not display screens, scrollbars, headers or buttons in print */
           .no-print {
             display: none !important;
           }
+          /* Setup A4 dimensions and remove default margins */
           @page {
             size: A4;
             margin: 15mm;
@@ -123,10 +122,10 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
         }
       `}</style>
 
-      {/* Main Container */}
-      <div className="bg-slate-900 border border-white/10 w-full max-w-6xl rounded-none sm:rounded-2xl shadow-2xl flex flex-col h-screen sm:h-[calc(100vh-2rem)] my-auto overflow-hidden no-print">
+      {/* Main Container - NOTICE: We do NOT put 'no-print' on this container itself to prevent display:none on its printable children! */}
+      <div className="bg-slate-900 border border-white/10 w-full max-w-6xl rounded-none sm:rounded-2xl shadow-2xl flex flex-col h-screen sm:h-[calc(100vh-2rem)] my-auto overflow-hidden">
         {/* Top Header */}
-        <div className="flex justify-between items-center bg-slate-950 p-4 border-b border-white/10">
+        <div className="flex justify-between items-center bg-slate-950 p-4 border-b border-white/10 no-print">
           <div className="flex items-center gap-3">
             <FileText className="text-emerald-400" size={24} />
             <div>
@@ -165,7 +164,7 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
 
         {/* Warning banner if inside iframe */}
         {isIframe && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 px-4 flex gap-3 items-center text-xs text-amber-200">
+          <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 px-4 flex gap-3 items-center text-xs text-amber-200 no-print">
             <Info size={18} className="shrink-0 text-amber-400 animate-pulse" />
             <div className="flex-1 leading-relaxed">
               <strong>تنبيه الأمان للمتصفح:</strong> أنت تقوم بمعاينة التطبيق داخل إطار مصغر (Iframe)، وهو ما يمنع المتصفح من فتح نافذة الطباعة مباشرة. يرجى الضغط على زر <strong className="text-amber-400 underline inline-flex items-center gap-1">افتح في نافذة جديدة <ExternalLink size={12} /></strong> الموجود في أعلى يسار شاشة AI Studio لفتح التطبيق بشكل كامل، ومن ثم ستعمل الطباعة بنجاح بنسبة 100%!
@@ -174,7 +173,7 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
         )}
 
         {/* Tab Selector on Mobile */}
-        <div className="flex border-b border-white/10 bg-slate-950/50 sm:hidden">
+        <div className="flex border-b border-white/10 bg-slate-950/50 sm:hidden no-print">
           <button
             onClick={() => setActiveTab('edit')}
             className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 ${
@@ -199,7 +198,7 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
         <div className="flex-1 flex overflow-hidden">
           
           {/* Form Editor Panel (Right side on desktop) */}
-          <div className={`w-full sm:w-1/2 p-4 sm:p-6 overflow-y-auto border-l border-white/10 space-y-4 ${
+          <div className={`w-full sm:w-1/2 p-4 sm:p-6 overflow-y-auto border-l border-white/10 space-y-4 no-print ${
             activeTab === 'edit' ? 'block' : 'hidden sm:block'
           }`}>
             <h3 className="text-white font-bold text-sm border-b border-white/5 pb-2 flex items-center gap-1.5 text-emerald-400">
@@ -353,7 +352,7 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
 
             {/* List of 15 members editing section */}
             <div className="space-y-2 border-t border-white/5 pt-4">
-              <label className="font-bold text-xs text-emerald-400 block">المعنيون بالمهمة (العمود الأيمن من الصفحة - حتى 15 فرداً)</label>
+              <label className="font-bold text-xs text-emerald-400 block">المعنيون بالمهمة (العمود الأيسر من الصفحة - حتى 15 فرداً)</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 h-44 overflow-y-auto bg-slate-950/50 p-2.5 rounded-xl border border-white/5 custom-scrollbar">
                 {missionMembers.map((member, index) => (
                   <div key={index} className="flex items-center gap-2">
@@ -372,11 +371,11 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
           </div>
 
           {/* Document Print Preview Panel (Left side on desktop, toggled on mobile) */}
-          <div className={`w-full sm:w-1/2 p-4 sm:p-6 bg-slate-950 overflow-y-auto flex justify-center ${
+          <div className={`w-full sm:w-1/2 p-4 sm:p-6 bg-slate-950 overflow-y-auto flex justify-center no-print ${
             activeTab === 'preview' ? 'block' : 'hidden sm:block'
           }`}>
             {/* The Print Sheet container mimic A4 */}
-            <div className="bg-white text-black w-full max-w-[21cm] min-h-[29.7cm] p-[1.5cm] flex flex-col justify-between shadow-2xl relative select-none print-area-root font-sans" style={{ direction: 'rtl' }}>
+            <div className="bg-white text-black w-full max-w-[21cm] min-h-[29.7cm] p-[1.5cm] flex flex-col justify-between shadow-2xl relative select-none font-sans" style={{ direction: 'rtl' }}>
               
               {/* Algerian Stripes sash (top right decoration matching PDF) */}
               <div className="absolute top-0 right-0 w-36 h-36 overflow-hidden pointer-events-none">
@@ -555,14 +554,14 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
                     </h4>
                     <div className="space-y-1.5 flex-1 flex flex-col justify-between text-xs pb-4">
                       {missionMembers.map((member, index) => (
-                        <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-400 pb-0.5 min-h-[1.8em]">
-                          {/* Name content on left */}
-                          <span className="font-semibold text-right flex-1 overflow-hidden whitespace-nowrap text-ellipsis px-1 text-[11px]">
-                            {member || ' '}
-                          </span>
-                          {/* Number is aligned to the right inside the row as per the PDF image */}
-                          <span className="font-bold text-gray-700 text-xs shrink-0 pl-1">
+                        <div key={index} className="flex items-center gap-1.5 border-b border-dotted border-gray-400 pb-0.5 min-h-[1.8em]">
+                          {/* Number is aligned to the right inside the row as per user request */}
+                          <span className="font-bold text-gray-700 text-xs shrink-0 w-6 text-right font-sans">
                             -{String(index + 1).padStart(2, '0')}
+                          </span>
+                          {/* Name content on the left of the number */}
+                          <span className="font-semibold text-right flex-1 overflow-hidden whitespace-nowrap text-ellipsis text-[11px]">
+                            {member || ' '}
                           </span>
                         </div>
                       ))}
@@ -607,6 +606,216 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
             <Printer size={14} />
             <span>طباعة الآن (Print)</span>
           </button>
+        </div>
+      </div>
+
+      {/* --- HIDDEN PRINT-AREA-ROOT SIBLING CONTAINER FOR PERFECT PRINTER REPRODUCTION --- */}
+      {/* This element is completely invisible on screen, but is the ONLY thing printed by the browser because of print media queries */}
+      <div className="hidden print:block print-area-root bg-white text-black font-sans" style={{ direction: 'rtl' }}>
+        {/* Algerian Stripes sash (top right decoration matching PDF) */}
+        <div className="absolute top-0 right-0 w-36 h-36 overflow-hidden pointer-events-none">
+          <div className="absolute top-4 -right-12 w-64 h-3.5 bg-emerald-600 rotate-45 transform"></div>
+          <div className="absolute top-8 -right-10 w-64 h-3.5 bg-red-600 rotate-45 transform"></div>
+          <div className="absolute top-12 -right-8 w-64 h-3.5 bg-emerald-600 rotate-45 transform"></div>
+        </div>
+
+        {/* Page Content */}
+        <div className="flex-1 flex flex-col h-full justify-between">
+          
+          {/* Header & Body content */}
+          <div>
+            {/* Official Header */}
+            <div className="flex justify-between items-start text-[11px] font-bold leading-relaxed border-b border-black/10 pb-4 mb-4">
+              {/* Right Header Text */}
+              <div className="space-y-0.5">
+                <p className="text-xs font-extrabold tracking-wide mb-1">الجمهوريــــة الجزائريــــة الديمقراطيــــة الشعبيـــــــــة</p>
+                <p className="font-semibold text-[11px]">واليــــــة باتنــــــــة</p>
+                <p className="font-semibold text-[11px]">مديريــة التنظـــيم و الشؤون العامـــــــــة</p>
+                <p className="font-semibold text-[11px]">مصلحة التنظــــــــــيم العـــــام</p>
+                <p className="font-extrabold text-indigo-900 border-r-2 border-emerald-600 pr-1.5 mt-1 text-xs">جمعية أولاد سلطان للخيالة والبارود التقليدي – باتنة –</p>
+                <p className="text-[9px] text-gray-600">المقر الإداري طريق حملة حي كشــــيد ة - باتن ة</p>
+                <p className="text-[9px] text-gray-600">الم طابقـــة القــــانونية مع القانون 06/12</p>
+              </div>
+
+              {/* Left Place / Date */}
+              <div className="text-left font-semibold shrink-0 pt-6 text-xs pl-2">
+                <p>باتنة في: <span className="font-bold border-b border-dashed border-gray-400 px-2">{issuedDate}</span></p>
+              </div>
+            </div>
+
+            {/* Doc Title */}
+            <div className="text-center my-6">
+              <h1 className="text-2xl font-black tracking-widest border-2 border-black inline-block px-10 py-2 rounded shadow-[2px_2px_0_#000]">
+                أمـــر للقيـــــــــــام بمهمـــــــــــــــــة
+              </h1>
+            </div>
+
+            {/* Main Body Columns */}
+            <div className="flex flex-row gap-6 mt-4 items-stretch">
+              
+              {/* Right Column (تفاصيل المهمة) */}
+              <div className="w-[62%] flex flex-col justify-between space-y-4">
+                
+                <div className="space-y-4 text-xs font-medium">
+                  
+                  {/* السيد */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">السيد:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-bold text-sm min-h-[1.5em] pb-0.5">
+                      {mrName}
+                    </span>
+                  </div>
+
+                  {/* المنصب */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">المنصب:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                      {position}
+                    </span>
+                  </div>
+
+                  {/* مأمور بالذهاب من */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">مأ مور بالذهاب من:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                      {fromPlace}
+                    </span>
+                  </div>
+
+                  {/* إلى */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">إلى:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                      {toPlace}
+                    </span>
+                  </div>
+
+                  {/* صحبة المعنيين بالمهمة */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">صحبة المعنيين بالمهمة:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5 leading-relaxed">
+                      {withRiders}
+                    </span>
+                  </div>
+
+                  {/* سبب التنقل */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">سبب التنقل:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5 leading-relaxed">
+                      {reason}
+                    </span>
+                  </div>
+
+                  {/* تاريخ القيام */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">تاريخ القيام بالمهمة:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                      {startDate}
+                    </span>
+                  </div>
+
+                  {/* تاريخ الانتهاء */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">تاريخ انتهاء المهمة:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                      {endDate}
+                    </span>
+                  </div>
+
+                  {/* المدة المحددة */}
+                  <div className="flex items-end gap-2">
+                    <span className="font-extrabold shrink-0">المدة المحددة:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                      {duration}
+                    </span>
+                  </div>
+
+                  {/* طريقة ووسيلة النقل */}
+                  <div className="flex flex-col gap-2.5 pt-1">
+                    <div className="flex items-end gap-2">
+                      <span className="font-extrabold shrink-0">طريقة و وسيلة النقل:</span>
+                      <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-semibold min-h-[1.5em] pb-0.5">
+                        {transportMethod}
+                      </span>
+                    </div>
+                    
+                    {/* سيارة خاصة indicator block */}
+                    <div className="flex items-center gap-6 pr-6">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3.5 h-3.5 border border-black rounded-sm flex items-center justify-center bg-gray-100 font-bold text-[10px]">
+                          {transportMethod.includes('سيارة خاصة') ? '✓' : ''}
+                        </span>
+                        <span className="font-extrabold text-xs">سيــــــارة خاصـــــــــة</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* لوحة ترقيم المركبة */}
+                  <div className="flex items-end gap-2 pt-1">
+                    <span className="font-extrabold shrink-0">لوحة ترقيم المركبة:</span>
+                    <span className="border-b border-dotted border-gray-500 flex-1 px-2 font-bold min-h-[1.5em] pb-0.5">
+                      {plateNumber || '........................................'}
+                    </span>
+                  </div>
+
+                  {/* حرر بـ / يوم */}
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="flex items-end gap-1.5">
+                      <span className="font-extrabold shrink-0">حرر بـ:</span>
+                      <span className="border-b border-dotted border-gray-500 flex-1 px-1 font-semibold min-h-[1.5em] pb-0.5">
+                        {issuedAt}
+                      </span>
+                    </div>
+                    <div className="flex items-end gap-1.5">
+                      <span className="font-extrabold shrink-0">يوم:</span>
+                      <span className="border-b border-dotted border-gray-500 flex-1 px-1 font-semibold min-h-[1.5em] pb-0.5">
+                        {issuedDate}
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Signature block */}
+                <div className="text-left pl-12 pt-6">
+                  <p className="font-black text-sm">توقيــــع الرئيـــــس</p>
+                  <div className="h-16 w-32 border border-transparent"></div>
+                </div>
+
+              </div>
+
+              {/* Left Column (المعنيون بالمهمة) */}
+              <div className="w-[38%] border-r border-gray-300 pr-4 flex flex-col">
+                <h4 className="text-center font-black text-xs bg-gray-100 py-1.5 border border-gray-300 mb-3 rounded">
+                  المعنيون بالمهمة
+                </h4>
+                <div className="space-y-1.5 flex-1 flex flex-col justify-between text-xs pb-4">
+                  {missionMembers.map((member, index) => (
+                    <div key={index} className="flex items-center gap-1.5 border-b border-dotted border-gray-400 pb-0.5 min-h-[1.8em]">
+                      {/* Number aligned to the right of the name as requested */}
+                      <span className="font-bold text-gray-700 text-xs shrink-0 w-6 text-right font-sans">
+                        -{String(index + 1).padStart(2, '0')}
+                      </span>
+                      {/* Name aligned to the left of the number */}
+                      <span className="font-semibold text-right flex-1 overflow-hidden whitespace-nowrap text-ellipsis text-[11px]">
+                        {member || ' '}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Bottom Notice */}
+          <div className="border-t-2 border-black/10 pt-4 mt-6">
+            <p className="text-[10px] font-black leading-relaxed">
+              <span className="underline ml-1">مالحظــــــــــــــــة:</span>
+              على السلطات المدنية والعسكرية أن تسمح لحامل هذا الأمر بالمهمة بالمرور بكل حرية وتسهل عليه القيام بمهمته مع إعطائه يد المساعدة.
+            </p>
+          </div>
+
         </div>
       </div>
     </div>
