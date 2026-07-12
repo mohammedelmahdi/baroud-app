@@ -70,6 +70,7 @@ export default function LoginView({ riders, onLoginSuccess, onNavigateToClient, 
       
       const allowedAdminEmails = [
         'mohammed.inezarene@gmail.com',
+        'salahinz00@gmail.com',
       ];
       
       if (allowedAdminEmails.includes(user.email.toLowerCase())) {
