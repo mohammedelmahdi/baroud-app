@@ -64,7 +64,7 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
     const lines = Array(15).fill('');
     assignedRidersList.forEach((rider, idx) => {
       if (idx < 15) {
-        lines[idx] = `${rider.name} (${rider.type === 'خيال' ? 'خيّال' : 'بارود'})`;
+        lines[idx] = rider.name;
       }
     });
     return lines;

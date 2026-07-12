@@ -43,7 +43,7 @@ export default function AdminRidersView({
 
   // Form states for adding
   const [newName, setNewName] = useState('');
-  const [newType, setNewType] = useState<RiderType>('خيال');
+  const [newType, setNewType] = useState<RiderType>('بارود');
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newStatus, setNewStatus] = useState<RiderStatus>('متاح');
@@ -51,7 +51,7 @@ export default function AdminRidersView({
 
   // Form states for editing
   const [editName, setEditName] = useState('');
-  const [editType, setEditType] = useState<RiderType>('خيال');
+  const [editType, setEditType] = useState<RiderType>('بارود');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
   const [editStatus, setEditStatus] = useState<RiderStatus>('متاح');
@@ -107,7 +107,7 @@ export default function AdminRidersView({
 
     // Reset fields
     setNewName('');
-    setNewType('خيال');
+    setNewType('بارود');
     setNewUsername('');
     setNewPassword('');
     setNewStatus('متاح');
@@ -487,7 +487,6 @@ export default function AdminRidersView({
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as RiderType)}
                 >
-                  <option value="خيال">لاعب عادِي (فروسية)</option>
                   <option value="بارود">بارودي متمرس (سلاح)</option>
                 </select>
               </div>
@@ -615,7 +614,6 @@ export default function AdminRidersView({
                   value={editType}
                   onChange={(e) => setEditType(e.target.value as RiderType)}
                 >
-                  <option value="خيال">لاعب عادِي (فروسية)</option>
                   <option value="بارود">بارودي متمرس (سلاح)</option>
                 </select>
               </div>
