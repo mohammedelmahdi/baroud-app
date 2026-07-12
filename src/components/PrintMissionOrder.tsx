@@ -378,14 +378,14 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
             <div className="bg-white text-black w-full max-w-[21cm] min-h-[29.7cm] p-[1.5cm] flex flex-col justify-between shadow-2xl relative select-none font-sans" style={{ direction: 'rtl' }}>
               
               {/* Algerian Stripes sash (top right decoration matching PDF) */}
-              <div className="absolute top-0 right-0 w-36 h-36 overflow-hidden pointer-events-none">
+              <div className="absolute top-0 right-0 w-36 h-36 overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-4 -right-12 w-64 h-3.5 bg-emerald-600 rotate-45 transform"></div>
                 <div className="absolute top-8 -right-10 w-64 h-3.5 bg-red-600 rotate-45 transform"></div>
                 <div className="absolute top-12 -right-8 w-64 h-3.5 bg-emerald-600 rotate-45 transform"></div>
               </div>
 
               {/* Page Content */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col relative z-10">
                 
                 {/* Official Header */}
                 <div className="flex justify-between items-start text-[11px] font-bold leading-relaxed border-b border-black/10 pb-4 mb-4">
@@ -396,8 +396,8 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
                     <p className="font-semibold text-[11px]">مديريــة التنظـــيم و الشؤون العامـــــــــة</p>
                     <p className="font-semibold text-[11px]">مصلحة التنظــــــــــيم العـــــام</p>
                     <p className="font-extrabold text-indigo-900 border-r-2 border-emerald-600 pr-1.5 mt-1 text-xs">جمعية أولاد سلطان للخيالة والبارود التقليدي – باتنة –</p>
-                    <p className="text-[9px] text-gray-600">المقر الإداري طريق حملة حي كشــــيد ة - باتن ة</p>
-                    <p className="text-[9px] text-gray-600">الم طابقـــة القــــانونية مع القانون 06/12</p>
+                    <p className="text-[9px] text-gray-600">المقر الإداري طريق حملة حي كشيدة - باتنة</p>
+                    <p className="text-[9px] text-gray-600">المطابقة القانونية مع القانون 06/12</p>
                   </div>
 
                   {/* Left Place / Date */}
@@ -613,14 +613,14 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
       {/* This element is completely invisible on screen, but is the ONLY thing printed by the browser because of print media queries */}
       <div className="hidden print:block print-area-root bg-white text-black font-sans" style={{ direction: 'rtl' }}>
         {/* Algerian Stripes sash (top right decoration matching PDF) */}
-        <div className="absolute top-0 right-0 w-36 h-36 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-36 h-36 overflow-hidden pointer-events-none z-0">
           <div className="absolute top-4 -right-12 w-64 h-3.5 bg-emerald-600 rotate-45 transform"></div>
           <div className="absolute top-8 -right-10 w-64 h-3.5 bg-red-600 rotate-45 transform"></div>
           <div className="absolute top-12 -right-8 w-64 h-3.5 bg-emerald-600 rotate-45 transform"></div>
         </div>
 
         {/* Page Content */}
-        <div className="flex-1 flex flex-col h-full justify-between">
+        <div className="flex-1 flex flex-col h-full justify-between relative z-10">
           
           {/* Header & Body content */}
           <div>
@@ -633,8 +633,8 @@ export default function PrintMissionOrder({ booking, riders, onClose }: PrintMis
                 <p className="font-semibold text-[11px]">مديريــة التنظـــيم و الشؤون العامـــــــــة</p>
                 <p className="font-semibold text-[11px]">مصلحة التنظــــــــــيم العـــــام</p>
                 <p className="font-extrabold text-indigo-900 border-r-2 border-emerald-600 pr-1.5 mt-1 text-xs">جمعية أولاد سلطان للخيالة والبارود التقليدي – باتنة –</p>
-                <p className="text-[9px] text-gray-600">المقر الإداري طريق حملة حي كشــــيد ة - باتن ة</p>
-                <p className="text-[9px] text-gray-600">الم طابقـــة القــــانونية مع القانون 06/12</p>
+                <p className="text-[9px] text-gray-600">المقر الإداري طريق حملة حي كشيدة - باتنة</p>
+                <p className="text-[9px] text-gray-600">المطابقة القانونية مع القانون 06/12</p>
               </div>
 
               {/* Left Place / Date */}
